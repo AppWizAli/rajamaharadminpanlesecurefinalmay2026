@@ -1,0 +1,360 @@
+.btn-outline-green {
+    background-color: rgb(108, 44, 143);
+   
+    color: #f7f8f8;
+    padding: 8px 20px;
+    font-weight: 500;
+    font-size: 15px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(33, 136, 56, 0.1);
+}
+
+.btn-outline-green:hover {
+    background-color: #423c96;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(33, 136, 56, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-outline-green i.small {
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+/* ............................... */
+  /* Search Container */
+  .search-container {
+    margin-bottom: 20px;
+    width: 100%;
+    
+}
+
+/* Search Group */
+.custom-search-group {
+    display: flex;
+    width: 100%;
+    border: 1px solid #71879e;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Input */
+.custom-search-input {
+    flex: 1;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: none;
+    outline: none;
+    border-radius: 0;
+}
+
+/* Button */
+.custom-search-button {
+    padding: 0 20px;
+    border: none;
+    background-color: #c8d1d6;
+    color: rgb(33, 27, 27);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-search-button:hover {
+    background-color: #b7c3cf;
+}
+
+.custom-search-button i {
+    font-size: 20px;
+}
+/* ....................................................  */
+
+
+
+/* Heading Style */
+.product-heading {
+    font-size: 27px;
+    color: black;
+    font-weight: bold;
+}
+
+/* Comment Style */
+.product-caption p {
+    color: rgb(130, 113, 113);
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+/* Action Icons */
+.action-icons {
+    display: flex;
+    gap: 15px;
+}
+
+.action-icon {
+    font-size: 18px;
+    transition: color 0.3s ease, transform 0.2s ease-in-out;
+    color: rgb(96, 92, 92);
+    
+}
+
+.edit-icon:hover {
+    color: blue;
+}
+
+.delete-icon:hover {
+    color: red;
+}
+
+.message-icon:hover {
+    color: green;
+}
+
+/* Buttons */
+.btn-view {
+    display: inline-block;
+    padding: 8px 18px;
+    margin: 8px 8px 0 0;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+/* First button - Outline Red */
+.btn-view:first-of-type {
+    color: red;
+    border: 2px solid red;
+    background-color: transparent;
+}
+
+.btn-view:first-of-type:hover {
+    background-color: red;
+    color: white;
+    border-color: red;
+}
+
+/* Second button - Outline Green */
+.btn-view:last-of-type {
+    color: green;
+    border: 2px solid green;
+    background-color: transparent;
+}
+
+.btn-view:last-of-type:hover {
+    background-color: green;
+    color: white;
+    border-color: green;
+}
+
+/* ......................................... */
+/* ................................................. */
+
+/* show-group.css  page  */
+
+
+/* Table and Header Styling */
+.table th {
+    background-color: #2c3e50; /* Darker background for table header */
+    color: white; /* White text color */
+    font-weight: bold; /* Bold font */
+
+    padding: 12px 15px; /* Add padding for better spacing */
+    border-bottom: 2px solid #34495e; /* Add subtle border for separation */
+}
+
+/* Hover effect for rows */
+.table tbody tr:hover {
+    background-color: #ecf0f1; /* Light gray background on hover */
+    transition: background-color 0.3s ease-in-out; /* Smooth transition */
+    cursor: pointer; /* Change cursor to pointer */
+}
+
+/* Button Styling */
+/* Button Styling */
+.action-btn {
+    
+    margin: 2px;
+    border-radius: 5px; /* Slightly more rounded buttons */
+    display: inline-flex; /* Align icon and text */
+    justify-content: center; /* Center icons */
+    align-items: center; /* Center icons vertically */
+    transition: all 0.3s ease-in-out; /* Smooth transition for buttons */
+    text-decoration: none; /* Remove underline from links */
+}
+
+/* Hover effect for action buttons */
+.action-btn:hover {
+    transform: translateY(-4px); /* Slight hover effect */
+    background-color: #34495e; /* Darker background on hover */
+    color: white; /* White text on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow for depth */
+}
+
+/* Specific button colors */
+.btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0056b3;
+}
+
+
+
+/* Table Row Hover Effect */
+.table tbody tr:hover {
+    background-color: #f8f9fa; /* Light background for row hover */
+}
+
+/* Hover Effect on Table Cells */
+.table td:hover {
+    background-color: #f1f1f1; /* Light background on hover for cells */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+/* Responsive Table Styling */
+@media (max-width: 768px) {
+    .table th, .table td {
+        padding: 8px 12px; /* Reduce padding on smaller screens */
+    }
+}
+
+
+
+
+/* Table Row Hover Effect */
+.table tbody tr:hover {
+    background-color: #f4f4f4; /* Light background for row hover */
+}
+
+/* Hover Effect on Table Cells */
+.table td:hover {
+    background-color: #f9f9f9; /* Light background on hover for cells */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+/* Responsive Table Styling */
+@media (max-width: 768px) {
+    .table th, .table td {
+        padding: 8px 12px; /* Reduce padding on smaller screens */
+    }
+}
+
+
+/* ..................................... */
+
+.btn-blue {
+    background-color: #1b52c7;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Segoe UI', sans-serif;
+    border: none;
+    border-radius: 10px; /* Updated from 6px */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 3px 6px rgba(37, 99, 235, 0.15);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+.btn-blue1 {
+    background-color: #105a7c;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Segoe UI', sans-serif;
+    border: none;
+    border-radius: 10px; /* Updated from 6px */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 3px 6px rgba(37, 99, 235, 0.15);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+.btn-blue i {
+    color: #ffffff; /* Default icon color */
+    transition: color 0.3s ease;
+}
+
+.btn-blue:hover {
+    background-color: #1d4ed8;
+    box-shadow: 0 5px 12px rgba(29, 78, 216, 0.25);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.btn-blue:hover i {
+    color: #a8a588; /* Icon color on hover — you can change this if you want another */
+}
+
+.btn-blue1 i {
+    color: #ffffff; /* Default icon color */
+    transition: color 0.3s ease;
+}
+
+.btn-blue1:hover {
+    background-color: #791eba;
+    box-shadow: 0 5px 12px rgba(29, 78, 216, 0.25);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.btn-blue1:hover i {
+    color: #a8a588; /* Icon color on hover — you can change this if you want another */
+}
+.btn-group-wrap {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.action-icon {
+    color: #555;
+    margin-left: 2px;
+    transition: color 0.3s ease;
+    font-size: 16px;
+}
+
+.action-icon:hover {
+    color: #264486;
+}

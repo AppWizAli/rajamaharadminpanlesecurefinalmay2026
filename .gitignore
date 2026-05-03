@@ -1,0 +1,33 @@
+
+# Large media files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.m4v
+
+# Large archives / backups
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# Database backups
+*.sql
+
+# Common dependency/cache folders
+node_modules/
+vendor/
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/
+
+# Environment files
+.env
+.env.*

@@ -1,0 +1,21 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# If a directory or a file exists, use it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, send to index.php
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Disable directory listing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Block access to .htaccess itself
+<Files .htaccess>
+  Order allow,deny
+  Deny from all
+</Files>

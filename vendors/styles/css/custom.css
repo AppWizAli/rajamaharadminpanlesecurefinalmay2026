@@ -1,0 +1,761 @@
+body,html{
+	line-height:1.8;
+	font-family:'Poppins',sans-serif;
+	color:#555e58;
+	text-transform:capitalize;
+	font-weight:400;
+	margin:0px;
+  box-sizing: border-box;
+	margin-top: 40px;
+	padding:0px;
+}
+
+
+/*==========================================================
+  material-icon font-style
+  ================================*/
+
+
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://example.com/MaterialIcons-Regular.eot); /* For IE6-8 */
+  src: local('Material Icons'),
+    local('MaterialIcons-Regular'),
+    url(https://example.com/MaterialIcons-Regular.woff2) format('woff2'),
+    url(https://example.com/MaterialIcons-Regular.woff) format('woff'),
+    url(https://example.com/MaterialIcons-Regular.ttf) format('truetype');
+}
+
+
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+
+/*==========================================================
+  material-icon font-style end
+  ================================*/
+  
+  
+  
+  h1,h2,h3,h4,h5,h6,.h1,.21,.h3,.h4{
+	   font-weight:400;
+	   line-height;1.5em;
+  }
+  
+  p{
+	   font-size:15px;
+	   margin:12px 0 0;
+	   line-height:24px;
+  }
+  
+  a{
+	  color:#333;
+	  font-weight:400;
+	  
+  }
+  
+  
+  button:focus{
+	  box-shadow:none;
+	  outline:none;
+	  border:none;
+  }
+  
+  
+  button{
+	  cursor:pointer;
+  }
+  
+  ul,ol{
+	  padding:0px;
+	  margin:0px;
+	  list-style:none;
+  }
+  
+  a,a:hover,a:focus{
+	  color:#333;
+	  text-decoration:none;
+	  transition:all 0.3s;
+  }
+  
+  
+  .wrapper{
+	position:relative;
+width:100%;
+overflow:auto;	
+  }
+  
+
+  /*=========sidebar---design------*/
+    /* Base Sidebar */
+/* Base Sidebar */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: #353b48;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    z-index: 1000;
+    transition: left 0.3s ease;
+}
+
+
+/* Content when sidebar is collapsed */
+@media only screen and (min-width: 992px) {
+    #sidebar.active {
+        left: -260px;
+    }
+
+    #content {
+        width: calc(100% - 260px);
+        float: right;
+        transition: width 0.3s ease;
+    }
+
+    #content.active {
+        width: 100%;
+    }
+}/* Scrollbar Styling - Clean & Subtle */
+#sidebar {
+    overflow-y: auto;
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: #6c7687 #2f343f;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+#sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+#sidebar::-webkit-scrollbar-track {
+    background: #2f343f;
+    border-radius: 6px;
+}
+#sidebar::-webkit-scrollbar-thumb {
+    background-color: #6c7687;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+/* Optional: subtle hover (not aggressive) */
+#sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #868d9b;
+}
+
+
+/* Sidebar Header */
+#sidebar .sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid #414853;
+    background: #353b48;
+}
+.sidebar-header h3 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+}
+.sidebar-header h3 img {
+    width: 40px;
+    margin-right: 10px;
+}
+
+/* Sidebar Menu Base */
+#sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#sidebar ul li {
+    padding: 2px 0;
+}
+#sidebar ul li a {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: #dcdde1;
+    font-size: 15px;
+    font-weight: 400;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+#sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 16px;
+    color: #a4b0be;
+    transition: all 0.3s ease;
+}
+
+/* Hover Effect for All Menu Items */
+#sidebar ul li a:hover {
+    background: linear-gradient(to right, #414b57, #4c5866);
+    color: #ffffff;
+    box-shadow: inset 4px 0 0 #00cec9;
+    transform: translateX(3px);
+}
+#sidebar ul li a:hover i {
+    color: #00cec9;
+    transform: scale(1.1) translateX(2px);
+}
+
+/* Active Item */
+#sidebar ul li.active > a {
+    background-color: #2f3640;
+    color: #ffffff;
+    box-shadow: inset 4px 0 0 #00cec9;
+    font-weight: 500;
+}
+#sidebar ul li.active > a i {
+    color: #00cec9;
+    transform: scale(1.1);
+}
+
+/* Component Spacing */
+#sidebar ul.component {
+    padding: 20px 0;
+}
+
+/* Sidebar Dropdown */
+#sidebar ul li.dropdown > a {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: #dcdde1;
+    font-size: 15px;
+    font-weight: 400;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    position: relative;
+    background-color: transparent;
+}
+
+/* Dropdown Icon */
+#sidebar ul li.dropdown > a i {
+    margin-right: 12px;
+    font-size: 16px;
+    color: #a4b0be;
+    transition: all 0.3s ease;
+}
+
+/* Dropdown Hover */
+#sidebar ul li.dropdown > a:hover {
+    background: linear-gradient(to right, #414b57, #4c5866);
+    color: #ffffff;
+    box-shadow: inset 4px 0 0 #00cec9;
+    transform: translateX(3px);
+}
+#sidebar ul li.dropdown > a:hover i {
+    color: #00cec9;
+    transform: scale(1.1) translateX(2px);
+}
+
+/* Dropdown Open/Active */
+#sidebar ul li.dropdown.active > a {
+    background-color: #3c4c5e;
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: inset 4px 0 0 #00cec9;
+}
+#sidebar ul li.dropdown.active > a i {
+    color: #00cec9;
+}
+
+/* Dropdown Submenu */
+#sidebar ul li.dropdown > ul.menu.collapse {
+    background-color: #2f3b4f;
+    padding: 6px 0;
+    border-radius: 0 0 6px 6px;
+    transition: background-color 0.3s ease;
+}
+
+/* Dropdown Submenu Items */
+#sidebar ul li.dropdown > ul.menu.collapse li a {
+    padding: 10px 40px;
+    font-size: 14px;
+    color: #dcdde1;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+/* Submenu Hover */
+#sidebar ul li.dropdown > ul.menu.collapse li a:hover {
+    background-color: #3c4c62;
+    color: #ffffff;
+    box-shadow: inset 4px 0 0 #00cec9;
+}
+#sidebar ul li.dropdown > ul.menu.collapse li a:hover i {
+    color: #00cec9;
+}
+
+/* Submenu Active */
+#sidebar ul li.dropdown > ul.menu.collapse li.active > a {
+    background-color: #253040;
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: inset 4px 0 0 #00cec9;
+}
+
+/* Dropdown Arrow */
+.dropdown-toggle::after {
+    font-size: 15px;
+    color: #a4b0be;
+    position: absolute;
+    right: 20px;
+}
+
+/* Component Spacing */
+#sidebar ul.component {
+    padding: 20px 0;
+}
+   
+  
+    /*=========sidebar---design- end-----*/
+	
+	
+	 /*========main-content- navbardesign -start-----*/
+	 @media (max-width: 768px) {
+		.main-container{
+		  margin-top: 60px; /* or padding-top: 60px; */
+		}
+		
+	  }
+	  
+
+
+
+	  #content{
+		  position:relative;
+		  transition:all 0.5s;
+		  background-attachment:#f9fafc;
+	  }
+	
+	  .navoption{
+		background-color:#353b48;
+	  }
+	/* Top navbar default style */
+.top-navbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	background-color: #353b48;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	transition: padding 0.3s ease, left 0.3s ease;
+	padding: 15px 30px; /* Default padding for small screens */
+	z-index: 1;
+  }
+  
+  /* Apply sidebar padding only on medium+ screens */
+  @media (min-width: 768px) {
+	.top-navbar {
+	  padding: 15px 30px 15px 280px; /* Sidebar space for tablets and desktops */
+	}
+  
+	body.sidebar-closed .top-navbar {
+	  padding: 15px 30px;
+	}
+  }
+  
+/* When sidebar is hidden */
+body.sidebar-closed .top-navbar {
+    padding: 15px 30px; /* No space for sidebar */
+}
+
+	 
+	 .xd-topbar{
+		 width:100%;
+		 position:relative;
+	 }
+	 
+	 input[type="search"]{
+		 background-color:#4a5263;
+		 color:#fff;
+		 padding-left:20px;
+		 border:none;
+		 border-radius:50px 0px 0px 50px;
+	 }
+	 
+	 .input-group-append{
+		 margin-left:-1px;
+	 }
+	 
+	 
+	.xp-searchbar .btn{
+		 background-color:#4a5263;
+		 color:#fff;
+		 font-weight:600;
+		 font-size:16px;
+		 border-radius:0 50px 50px 0;
+		 padding:4px  15px;
+	 }
+	 
+	 
+	.xp-breadcrumbbar .page-title{
+		font-size:20px;
+		color:#fff;
+		margin-bottom:0;
+		margin-top:0;
+	}
+	 
+	 .breadcrumb{
+		 display:inline-flex;
+		 background-color:transparent;
+		 margin:0;
+		 padding:10px 0 0;
+	 }
+	 
+	 .breadcrumb .breadcrumb-item a{
+		 color:#777777;
+	 }
+	 
+	 .breadcrumb-item.active{
+		 color:#6c757d;
+	 }
+	  
+	  
+	   .breadcrumb-item+.breadcrumb-item{
+		   padding-left:.5rem;
+	   }
+	   
+	   .main-content{
+		   padding:30px 30px 0px 30px;
+	   }
+	   
+	   .navbar{
+		   background-color:#353B48;
+		   color:#fff;
+	   }
+	   
+	   .navbar-brand{
+		   color:#fff;
+	   }
+	   
+	   .navbar button{
+		   background-color:transparent;
+           border:none;		   
+	   }
+	   
+	    .navbar button span{
+			color:#fff;
+		}
+		
+		.xp-menubar{
+         border-radius:50%;
+       width:45px;
+height:45px;
+line-height:45px;
+text-align:center;
+margin-right:20px;
+border:none;
+color:#fff;
+cursor:pointer;
+background-color:rgba(0,0,0,0.09);	   
+		}
+		
+		
+	  .xp-menubar span{
+		margin:9px;
+		padding:0px;
+		transform:rotate(90deg);
+	  }
+	  
+	  .navbar-nav > li.active{
+		  color:#fff;
+		  border-radius:4px;
+		  background-color:rgba(0,0,0,0.08);
+	  }
+	  .navbar-nav > li > a{
+		  color:#fff;
+	  }
+	  
+	  .navbar .notification{
+		  position:absolute;
+		  top:2px;
+		  right:3px;
+		  display:block;
+		  font-size:9px;
+		  border:0;
+		  background-color:#2bcd72;
+		  min-width:15px;
+		  text-align:center;
+		  padding:1px 5px;
+		  height:15px;
+		  border-radius:2px;
+		  line-height:14px;
+	  }
+	  
+	  @media (max-width:768px){
+		  .xp-searchbar{
+			  margin-top:20px;
+		  }
+	  }
+	  
+	  .navbar-nav > li.show .dropdown-menu{
+		  transform:translate3d(0,0,0);
+		  opacity:1;
+		  display:block;
+		  visibility:visible;
+	  }
+	  
+	  .dropdown-menu{
+		  border:0;
+		  box-shadow:0 2px 5px 0 rgba(0 0 0 / 26%);
+		  transform:translate3d(0, -20px ,0);
+		  visibility:hidden;
+		  position:absolute!important;
+		  transition:all 150ms linear;
+		  display:block;
+		  min-width:15rem;
+		  right:0;
+		  left:auto;
+		  opacity:0;
+	  }
+	  
+	  .small-menu{
+		  min-width:10rem;
+	  }
+	  
+	  	
+	  .dropdown-menu li > a{
+		  font-size:15px;
+		  padding:10px 20px;
+		  margin:0 5px;
+		  border-radius:2px;
+		  font-weight:400;
+		  transition:all 150ms linear;
+	  }
+	  
+	  
+	  .dropdown-menu li > a .material-icons{
+		  position:relative;
+		  top:3px;
+		  color:#777;
+		  margin-right:6px;
+		  font-size:16px;
+		  
+	  }
+	  
+	  .navbar-nav > .active > a:focus{
+		  color:#fff;
+		  background-color:rgba(0,0,0,0.08);
+	  }
+	   .navbar-nav li a{
+		   position:relative;
+		   display:block;
+		   padding:4px 10px!important;
+	   }
+	   
+	  .nav-item .nav-link .material-icons{
+		  position:relative;
+		  top:10px;
+		  font-size:19px;
+	  }
+	  
+	  .xp-user-live{
+		  position:absolute;
+		  bottom:5px;
+		  right:9px;
+		  width:12px;
+		  height:12px;
+		  border-radius:50%;
+		  border:2px solid #353b48;
+		  background-color:#4c7cf3;
+	  }
+	  
+	   /*---navbardesign -end-----*/
+	   
+	   
+	   
+	   /*--table design start----*/ 
+	 
+			
+	      /*--table design end----*/ 
+	   
+	   
+	   /*-------modal-style start------*/
+	   .modal .modal-dialog{
+		   max-width:400px;
+	   }
+	   .modal .modal-header, .modal .modal-body,.modal .modal-footer{
+		   padding:20px 30px;
+	   }
+	   .modal .modal-content{
+		   border-radius:3px;
+	   }
+	   
+	   .modal .modal-footer{
+		   background:#ecf0f1;
+		   border-radius:0 0 3px 3px;
+	   }
+	   
+	   .modal .modal-title{
+		   display:inline-block;
+	   }
+	   
+	   .modal .form-control{
+		   border-radius:2px;
+		   box-shadow:none;
+		   border-color:#dddddd;
+	   }
+	   
+	    .modal textarea.form-control{
+			resize:vertical;
+		}
+		
+		  .modal .btn{
+			  border-radius:2px;
+			  min-width:100px;
+		  }
+		  
+		  .modal form label{
+			  font-weight:normal;
+		  }
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+	   
+	   	   /*-------modal-style end------*/
+		   
+		   
+		   
+		      /*-------footer design start------*/
+			  footer{
+		       background-color:#353b48;
+			   color:#fff;
+			   text-align:center;
+			   padding:10px 30px;
+			   position:relative;
+			   width:100%;
+			  }
+		   
+		       /*-------footer design end------*/
+		   
+		   
+		   
+		   #sidebar.show-nav, .body-overlay.show-nav{
+			   transform:translatex(0%);
+			   opacity:1;
+			   display:block;
+			   visibility:visible;
+			   z-index:15;
+		   }
+		   
+	   
+	   
+	  
+	 /*========main-content- navbardesign -end-----*/
+	
+	
+	@media only screen and (max-width:992px){
+		#sidebar{
+			position:fixed;
+			top:0;
+			 bottom:0;
+			 z-index:10;
+			 width:260px;
+			 transform:translatex(-100%);
+			 transition:all 150ms linear;
+			 box-shadow:none!important;
+		}
+		
+		.body-overlay{
+			position:fixed;
+			top:0;
+			left:0;
+			width:100%;
+			height:100%;
+			display:none;
+			visibility:hidden;
+			opacity:0;
+			z-index:3;
+			transition:all 150ms linear;
+			background-color:rgba(0,0,0,0.5);
+		}
+	}
+	
+	
+	/* ...................................... */
+
+	
+	/* Custom Icon Size */
+.custom-icon-size {
+    font-size: 22px; /* Increased icon size */
+}
+
+/* Light effect on icons (default state) */
+.custom-icon-light {
+    color: #333333; /* Set default light black color for icons */
+    transition: color 0.3s ease-in-out;
+}
+
+/* Hover effect for icons */
+.custom-icon-light:hover {
+    color: #ADD8E6; /* Change to light blue on hover */
+}
+
+/* Bold Text */
+a {
+    font-weight: 600; /* Make the text bold */
+    font-family: Arial, sans-serif; /* Optional: Set a bold font family */
+}
+
+/* Active Link Styling */
+li.active a {
+    font-weight: bold; /* Keep active link bold */
+    color: #17a2b8; /* Change the active text color */
+}
+
+li.active .custom-icon-size {
+    font-size: 15px; /* Increased icon size for active items */
+    color: #17a2b8; /* Color change for active icon */
+}
+
+/* Optional: Hover effects for links */
+a:hover {
+    color: #17a2b8; /* Change text color to light blue when hovering */
+}
+
+	
+	
+	
+	
+	
+	
+	
+  

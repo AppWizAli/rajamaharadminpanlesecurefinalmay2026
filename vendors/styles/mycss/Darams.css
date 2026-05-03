@@ -1,0 +1,495 @@
+.section-header-custom {
+    padding: 15px 20px;
+    border-left: 5px solid #753dbd; /* Red border for attention */
+    background-color: #ffffff;
+    margin-bottom: 25px;
+    border-radius: 8px;
+}
+
+.section-title-custom {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937; /* Updated to dark slate for big heading */
+    margin-bottom: 5px;
+}
+
+.section-subtitle-custom {
+    font-size: 14px;
+    color: #6b7280; /* Cool gray for smaller subtitle text */
+    font-weight: 500;
+    margin: 0;
+}
+
+
+/* .............................. */
+
+.custom-file-upload-group {
+    margin-bottom: 20px;
+}
+
+.custom-file-icon-label {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+
+.upload-icon-img {
+    width: 70%;
+    height: 100%;
+    object-fit: contain;
+
+    transition: filter 0.3s ease;
+}
+
+
+.custom-file-input {
+    display: none;
+}
+
+/* .............................. */
+.btn-custom-red {
+    background-color: #2259b1; /* Sky blue background */
+   
+    color: #ffffff; /* Light text */
+    font-weight: 500;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15); /* Light shadow */
+    transition: all 0.3s ease-in-out;
+    outline: none;
+}
+
+.btn-custom-red:hover {
+    background-color: #1f429c; /* Slightly different sky blue on hover */
+    color: #fff;
+    border-color: #0ea5e9;
+    box-shadow: 0 6px 14px rgba(14, 165, 233, 0.3);
+}
+
+.btn-custom-red:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2); /* Optional subtle focus effect */
+}
+
+
+/* .........................................  */
+
+  /* show-notifation css  */
+
+
+  /* Custom red title class */
+.section-title-red {
+    color: rgb(94, 90, 90);
+    font-size: 1.5rem; /* Adjust the size as needed */
+    font-weight: bold;
+}
+
+/* Custom outline green button class */
+.btn-outline-custom-green {
+    background-color: rgb(108, 44, 143);
+   
+    color: #f7f8f8;
+    padding: 8px 20px;
+    font-weight: 500;
+    font-size: 15px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(33, 136, 56, 0.1);
+}
+
+.btn-outline-custom-green:hover {
+    background-color: #423c96;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(33, 136, 56, 0.2);
+    transform: translateY(-2px);
+}
+
+
+/* ................................... */
+
+/* Custom Table Styles */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.table-bordered {
+    border: 1px solid #363e45;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1e6e6;
+}
+
+/* Custom Table Header */
+.table-head-custom {
+    background-color: #353b48;
+    color: white;
+    font-weight: bold;
+}
+
+.table th, .table td {
+    padding: 12px;
+    text-align: center;
+}
+
+/* Custom Button Styles */
+.btn-custom-blue {
+    background-color: #4e73df;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    margin-right: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn-custom-blue:hover {
+    background-color: #3e5c9e;
+}
+
+.btn-custom-red1 {
+    background-color: #e74a3b;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    transition: background-color 0.3s;
+}
+
+.btn-custom-red1:hover {
+    background-color: #c0392b;
+}
+
+/* Custom Table Row */
+.table tbody tr td {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.table tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+
+
+@media (max-width: 768px) {
+    .table th, .table td {
+        padding: 8px 6px;
+        font-size: 13px;
+    }
+
+    .btn-sm {
+        font-size: 12px;
+        padding: 5px 8px;
+        width: 100%; /* full width */
+        
+    }
+
+    .action-buttons .btn-sm:not(:last-child) {
+        margin-bottom: 6px; /* spacing between stacked buttons */
+    }
+
+    .table td {
+        white-space: nowrap;
+    }
+}
+/* Base styling for buttons */
+.btn-custom-blue {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+}
+.btn-custom-blue:hover {
+    background-color: #0056b3;
+}
+
+.btn-custom-red1 {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+}
+.btn-custom-red1:hover {
+    background-color: #a71d2a;
+}
+
+
+
+/* Responsive adjustments for mobile and tablets */
+/* 
+@media (max-width: 768px) {
+    .table th, .table td {
+        padding: 8px 6px;
+        font-size: 13px;
+    }
+
+    .btn-sm {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .w-100 {
+        width: 100% !important;
+    }
+
+    .gap-2 > *:not(:last-child) {
+        margin-bottom: 6px;
+    }
+} */
+/* Mobile Card Styling */
+
+@media (max-width: 991px) {
+    .card.mb-3.shadow-sm {
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        background-color: #fff;
+        padding: 15px;
+        margin: 15px 10px;
+    }
+
+    .card-body {
+        padding: 10px;
+    }
+
+    .card-body img {
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    .card-body h6 {
+        font-size: 16px;
+        color: #333;
+    }
+
+    .card-body small.text-muted {
+        font-size: 13px;
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+
+    .d-flex.justify-content-between.flex-wrap {
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .d-flex.align-items-center.mb-3 {
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    .me-1 {
+        margin-right: 0.25rem !important;
+    }
+
+    .mb-1 {
+        margin-bottom: 0.25rem !important;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding: 15px 10px;
+    }
+
+    .section-title-red {
+        font-size: 20px;
+        margin-bottom: 10px;
+        text-align: center; /* Center the text */
+    }
+
+    .page-header .row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .page-header .col-md-12 {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .btn-outline-custom-green {
+        font-size: 13px;
+        width: 50%;
+        text-align: center;
+        padding: 8px 0;
+        margin: 0 auto;
+        display: block;
+    }
+}
+@media (max-width: 768px) {
+    .mobile-notification {
+        display: flex;
+        flex-direction: column;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        padding: 15px;
+        margin-top: 30px;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .notification-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+    }
+
+    .notification-time {
+        font-size: 12px;
+        color: #777;
+        margin-left: 15px;
+        text-align: right;
+    }
+
+    .notification-body {
+        margin-bottom: 15px;
+    }
+
+    .notification-message {
+        font-size: 14px;
+        color: #555;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .notification-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .btn-custom-blue, .btn-custom-red1 {
+        padding: 8px 10px;
+        font-size: 13px;
+        width: 45%;
+    }
+
+    .btn-custom-blue {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-custom-red1 {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    /* Adding a horizontal line or border to separate each notification */
+    .mobile-notification + .mobile-notification {
+        border-top: 1px solid #ddd; /* Border to separate the notifications */
+    }
+
+    /* Optional: Adding a horizontal line below the body */
+    .mobile-notification .notification-body {
+        border-bottom: 1px solid #ddd; /* Border between body and actions */
+        padding-bottom: 10px;
+    }
+}
+@media (max-width: 768px) {
+    .mobile-user-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-header {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .user-email {
+        font-size: 14px;
+    }
+
+    .user-comment {
+        font-size: 13px;
+        color: #555;
+    }
+
+    .user-actions button {
+        font-size: 12px;
+        width: 30%;
+    }
+}
+@media (max-width: 991.98px) {
+    .mobile-user-card {
+        background-color: #fdfdfd;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .mobile-user-card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-user-card .user-name {
+        font-size: 1.1rem;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .mobile-user-card p,
+    .mobile-user-card small {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+
+    .mobile-user-card .btn i {
+        margin-right: 6px;
+    }
+
+    .mobile-user-card .d-grid {
+        gap: 10px;
+    }
+}
