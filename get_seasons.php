@@ -1,6 +1,7 @@
 <?php
 include "config.php";
 include "auth_token_check.php"; 
+include "media_input_helper.php";
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
@@ -19,9 +20,14 @@ try {
     // Execute the query
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    // Fetch all seasons as an associative array
-    $seasons = $result->fetch_all(MYSQLI_ASSOC);
+
+    $seasons = array();
+    while ($row = $result->fetch_assoc()) {
+        if (isset($row['thumbnail'])) {
+            $row['thumbnail'] = media_to_client_url($row['thumbnail']);
+        }
+        $seasons[] = $row;
+    }
     
     // Return the results as JSON
     echo json_encode([

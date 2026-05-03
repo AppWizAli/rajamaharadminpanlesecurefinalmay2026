@@ -2,6 +2,7 @@
 header("Content-Type: application/json");
 include "auth_token_check.php";
 include "config.php";
+include "media_input_helper.php";
 
 // Read the JSON data from POST request
 $data = json_decode(file_get_contents("php://input"), true);
@@ -26,6 +27,9 @@ $episodes = array();
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $row['video_path'] = "";
+        if (isset($row['thumbnail'])) {
+            $row['thumbnail'] = media_to_client_url($row['thumbnail']);
+        }
         $episodes[] = $row;
     }
 } else {

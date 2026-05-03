@@ -63,18 +63,6 @@ $video_path = $row['video_path'] ?? '';
 $video_path = decrypt_video_path_if_needed($video_path, $VIDEO_URL_ENCRYPTION_KEY);
 
 if (preg_match('#^https?://#i', $video_path)) {
-    if ($purpose === 'download') {
-        http_response_code(403);
-        echo "External video downloads are blocked for security.";
-        exit;
-    }
-
-    if ($privacy !== 'public' || $download_access !== 'never') {
-        http_response_code(403);
-        echo "Protected videos must be hosted locally for secure playback.";
-        exit;
-    }
-
     if (stripos($video_path, 'https://') !== 0) {
         http_response_code(403);
         echo "Only HTTPS external playback links are allowed.";

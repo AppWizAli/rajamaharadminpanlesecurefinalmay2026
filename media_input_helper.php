@@ -14,6 +14,27 @@ function media_public_path($relativePath) {
     return str_replace(DIRECTORY_SEPARATOR, '/', ltrim($relativePath, "/\\"));
 }
 
+function media_public_base_url() {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'] ?? "localhost";
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    return $scheme . "://" . $host . ($dir !== '' ? $dir : '');
+}
+
+function media_to_client_url($value) {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (media_is_url($value)) {
+        return $value;
+    }
+
+    $relative = ltrim(str_replace('\\', '/', $value), '/');
+    return rtrim(media_public_base_url(), '/') . '/' . $relative;
+}
+
 function media_guess_extension($filename, $fallback = '') {
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     return $ext !== '' ? $ext : $fallback;
@@ -103,7 +124,9 @@ function media_store_uploaded_file(array $file, $relativeDirectory, array $allow
         throw new RuntimeException("Could not save uploaded {$label}.");
     }
 
-    return media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName);
+    return media_to_client_url(
+        media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName)
+    );
 }
 
 function resolve_media_value(array $file, $textValue, array $options) {
@@ -156,29 +179,34 @@ function media_is_local_managed_video($value) {
 
 function enforce_secure_video_policy($videoPath, $privacy, $downloadAccess) {
     $isRemote = media_is_url($videoPath);
-    $isProtected = $privacy === 'private' || $downloadAccess !== 'never';
 
-    if ($isProtected && !media_is_local_managed_video($videoPath)) {
-        throw new RuntimeException(
-            "Private or downloadable videos must be uploaded to this server. Direct external video links are allowed only for public stream-only videos."
-        );
-    }
-
-    if ($isRemote && !$isProtected) {
+    if ($isRemote) {
         $scheme = strtolower((string) parse_url($videoPath, PHP_URL_SCHEME));
         if ($scheme !== 'https') {
-            throw new RuntimeException("Public remote videos must use HTTPS.");
+            throw new RuntimeException("Only HTTPS external video URLs are allowed.");
         }
     }
 }
 
 function media_resolve_local_public_file($value) {
     $value = trim((string) $value);
-    if ($value === '' || media_is_url($value)) {
+    if ($value === '') {
         return null;
     }
 
-    $normalized = ltrim(str_replace('\\', '/', $value), '/');
+    if (media_is_url($value)) {
+        $path = parse_url($value, PHP_URL_PATH);
+        if (!$path) {
+            return null;
+        }
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+        if (($pos = strpos($normalized, 'uploads/')) !== false) {
+            $normalized = substr($normalized, $pos);
+        }
+    } else {
+        $normalized = ltrim(str_replace('\\', '/', $value), '/');
+    }
+
     if (strpos($normalized, 'uploads/') !== 0) {
         return null;
     }
