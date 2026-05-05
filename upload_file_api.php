@@ -61,7 +61,8 @@ $mime_type = $finfo->file($file_tmp);
 
 $valid_mime_types = [
     'image/jpeg', 'image/png', 'image/gif',
-    'video/mp4', 'audio/mpeg', 'audio/wav',
+    'video/mp4', 'video/quicktime', 'video/x-matroska',
+    'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/aac', 'audio/mp4', 'audio/x-m4a',
     'application/pdf', 'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel', 'application/zip',
