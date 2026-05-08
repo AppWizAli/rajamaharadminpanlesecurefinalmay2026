@@ -31,25 +31,24 @@ if (!$row) {
 }
 
 $current_end_date = $row['end_date'];
+$today = new DateTime('today');
 
 if ($current_end_date) {
-    // Calculate new end date by adding 30 days
-    $date = new DateTime($current_end_date);
-    $date->add(new DateInterval('P30D')); // Add exactly 30 days
-    $new_end_date = $date->format('Y-m-d');
+    $currentDate = new DateTime($current_end_date);
+    $baseDate = $currentDate < $today ? $today : $currentDate;
 } else {
-    // If no end_date, set to 30 days from today
-    $date = new DateTime();
-    $date->add(new DateInterval('P30D'));
-    $new_end_date = $date->format('Y-m-d');
+    $baseDate = $today;
 }
+
+$baseDate->add(new DateInterval('P30D'));
+$new_end_date = $baseDate->format('Y-m-d');
 
 // Update end_date
 $update_stmt = $conn->prepare("UPDATE group_members SET end_date = ?, updated_at = NOW() WHERE user_id = ? AND group_id = ?");
 $update_stmt->bind_param("sii", $new_end_date, $user_id, $group_id);
 
 if ($update_stmt->execute()) {
-    echo json_encode(['success' => true, 'message' => 'End date increased by 30 days']);
+    echo json_encode(['success' => true, 'message' => 'End date increased by 30 days', 'end_date' => $new_end_date]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Database update failed']);
 }

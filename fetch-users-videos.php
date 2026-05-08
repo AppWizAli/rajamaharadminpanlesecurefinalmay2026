@@ -43,6 +43,7 @@ try {
           AND e.season_id = ?
           AND s.drama_id = ?
           AND s.season_number = ?
+          AND uv.end_date >= CURDATE()
         ORDER BY e.episode_number ASC
     ";
 

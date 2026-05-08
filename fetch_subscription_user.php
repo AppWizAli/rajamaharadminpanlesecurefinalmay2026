@@ -12,44 +12,37 @@ if (!isset($_GET['user_id'])) {
 $user_id = intval($_GET['user_id']);
 $today = date('Y-m-d');
 
+$status = true;
+$message = "Both group and single-user subscriptions are expired.";
+
 $stmt = $conn->prepare("
-    SELECT end_date FROM group_members 
-    WHERE user_id = ?
+    SELECT MAX(end_date) AS end_date
+    FROM (
+        SELECT end_date FROM group_members WHERE user_id = ? AND end_date >= ?
+        UNION ALL
+        SELECT end_date FROM user_videos WHERE user_id = ? AND end_date >= ?
+    ) active_subscriptions
 ");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("isis", $user_id, $today, $user_id, $today);
 $stmt->execute();
 $result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$active_end_date = $row['end_date'] ?? null;
+$stmt->close();
 
-$status = true;
-$message = "No active subscription found.";
+if ($active_end_date) {
+    $days_left = (int)((strtotime($active_end_date) - strtotime($today)) / (60 * 60 * 24));
+    $status = false;
+    $message = "Subscription is active.";
 
-while ($row = $result->fetch_assoc()) {
-    $end_date = $row['end_date'];
-
-    if ($end_date) {
-        $days_left = (strtotime($end_date) - strtotime($today)) / (60 * 60 * 24);
-        $days_left = (int)$days_left;
-
-        if ($days_left > 2) {
-            $status = false;
-            $message = "Subscription is active.";
-            break; // No need to continue
-        }elseif ($days_left === 2) {
-            $status = true;
-            $message = "Your subscription ends in two days. Please contact us to resubscribe.";
-            break;
-        } elseif ($days_left === 1) {
-            $status = true;
-            $message = "Your subscription ends in one day. Please contact us to resubscribe.";
-            break;
-        } elseif ($days_left === 0) {
-            $status = true;
-            $message = "Your subscription ends today. Please contact us to resubscribe.";
-            break;
-        }
+    if ($days_left === 2) {
+        $message = "Your subscription ends in two days, but you still have access.";
+    } elseif ($days_left === 1) {
+        $message = "Your subscription ends in one day, but you still have access.";
+    } elseif ($days_left === 0) {
+        $message = "Your subscription ends today, but you still have access.";
     }
 }
-$stmt->close();
 
 echo json_encode([
     "status" => $status,

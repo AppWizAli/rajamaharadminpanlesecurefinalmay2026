@@ -12,9 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user_id > 0 && $drama_id > 0 && $season_id > 0 && $season_number !== null) {
         try {
             // Fetch all group_ids for the user
-            $group_query = "SELECT group_id FROM group_members WHERE user_id = ?";
+            $today = date('Y-m-d');
+            $group_query = "SELECT group_id FROM group_members WHERE user_id = ? AND end_date >= ?";
             $group_stmt = $conn->prepare($group_query);
-            $group_stmt->bind_param("i", $user_id);
+            $group_stmt->bind_param("is", $user_id, $today);
             $group_stmt->execute();
             $group_result = $group_stmt->get_result();
             $group_ids = [];

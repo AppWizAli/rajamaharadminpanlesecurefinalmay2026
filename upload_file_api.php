@@ -5,7 +5,7 @@ header("Content-Type: application/json");
 // === CONFIGURATION ===
 define('MAX_FILE_SIZE', 100 * 1024 * 1024); // 100 MB
 $upload_folder = "x9Nq4GkL2v7TzR1s/uploads/";
-$base_url = "https://ub.urdubolo.pk/MAyPN23gEI/uploads/";
+$base_url = "https://ub.urdubolo.pk/MAyPN23gE19/uploads/";
 
 $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mp3', 'wav', 'pdf', 'docx', 'txt', 'xlsx', 'pptx', 'zip', 'rar','m4a'];
 $forbidden_extensions = ['php', 'exe', 'sh', 'bat', 'js', 'py', 'cgi'];

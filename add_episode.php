@@ -147,7 +147,7 @@ if (!isset($_SESSION['admin_id'])) {
                             <div class="form-group row">
                                 <label class="col-sm-12 col-md-2 col-form-label">Thumbnail Link/Path</label>
                                 <div class="col-sm-12 col-md-10">
-                                    <input type="text" class="form-control" name="thumbnail[]" placeholder="https://example.com/thumb.jpg or uploads/thumbnails/episode/file.jpg">
+                                    <input type="text" class="form-control" name="thumbnail[]" placeholder="https://example.com/thumb.jpg, http://example.com/thumb.jpg, or uploads/thumbnails/episode/file.jpg">
                                     <small class="media-help">Paste an image link/path, or choose a file below. Upload wins if both are given.</small>
                                     <input type="file" class="form-control mt-2" name="thumbnail_file[]" accept=".jpg,.jpeg,.png,.webp,.gif,image/*">
                                 </div>
@@ -299,7 +299,8 @@ if (!isset($_SESSION['admin_id'])) {
         document.getElementById('addEpisodeBtn').addEventListener('click', function() {
             const container = document.querySelector('.episode-container');
             const episodes = document.querySelectorAll('.episode');
-            const template = episodes[0].cloneNode(true);
+            const sourceEpisode = episodes[episodes.length - 1];
+            const template = sourceEpisode.cloneNode(true);
             const newIndex = episodes.length;
 
             template.querySelectorAll('input, textarea').forEach((field) => {
@@ -309,7 +310,6 @@ if (!isset($_SESSION['admin_id'])) {
                     } else {
                         field.name = `downloadAccessOptions[${newIndex}]`;
                     }
-                    field.checked = false;
                     return;
                 }
 
@@ -317,12 +317,8 @@ if (!isset($_SESSION['admin_id'])) {
                     field.value = '';
                     return;
                 }
-
-                field.value = '';
             });
 
-            template.querySelector('input[value="private"]').checked = true;
-            template.querySelector('input[value="appStorage"]').checked = true;
             template.querySelector('.episode-progress-bar').style.width = '0%';
             template.querySelector('.episode-progress-bar').textContent = '0%';
             template.querySelector('.episode-status').textContent = '';

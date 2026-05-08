@@ -65,8 +65,8 @@ function media_validate_remote_url($value, array $allowedExtensions, $label) {
     }
 
     $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
-    if ($scheme !== 'https') {
-        throw new RuntimeException("Only HTTPS {$label} URLs are allowed.");
+    if ($scheme !== 'http' && $scheme !== 'https') {
+        throw new RuntimeException("Only HTTP or HTTPS {$label} URLs are allowed.");
     }
 
     if (!media_extension_matches($value, $allowedExtensions)) {
