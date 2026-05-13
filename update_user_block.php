@@ -35,7 +35,12 @@ if ($user_id > 0) {
 }
 
 $redirect = "security_incidents.php";
-if (!empty($_POST['return_user_id'])) {
+if (!empty($_POST['return_url']) && strpos($_POST['return_url'], "\n") === false && strpos($_POST['return_url'], "\r") === false) {
+    $return_url = $_POST['return_url'];
+    if (preg_match('/^security_[a-z_]+\.php(\?.*)?$/', $return_url)) {
+        $redirect = $return_url;
+    }
+} elseif (!empty($_POST['return_user_id'])) {
     $redirect .= "?user_id=" . intval($_POST['return_user_id']);
 }
 header("Location: " . $redirect);

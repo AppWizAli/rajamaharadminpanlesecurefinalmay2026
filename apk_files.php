@@ -1,38 +1,38 @@
 <?php
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
 
 include "config.php";
+include "apk_schema.php";
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit;
+}
 
-header("Content-Type: application/json");
+ensure_apk_table($conn);
 
 if ($conn->connect_error) {
-    echo json_encode(array("error" => "Database connection failed: " . $conn->connect_error));
+    echo json_encode([]);
     exit;
 }
 
-
-$sql = "SELECT * FROM apk_files";
+$sql = "
+    SELECT `string`, version_name, version_code, apk_url, original_name, file_size, created_at
+    FROM apk_files
+    WHERE is_active = 1
+    ORDER BY created_at DESC
+    LIMIT 1
+";
 $result = $conn->query($sql);
 
-
-if (!$result) {
-    echo json_encode(array("error" => "SQL error: " . $conn->error));
-    exit;
-}
-
-
-$response = array();
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $response[] = $row;
-    }
-} else {
-    $response = array("message" => "No APK files found.");
+$response = [];
+if ($result && $result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $row['string'] = $row['version_name'] ?: $row['string'];
+    $row['is_latest'] = true;
+    $response[] = $row;
 }
 
 echo json_encode($response);

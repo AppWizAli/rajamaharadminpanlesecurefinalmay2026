@@ -26,9 +26,16 @@ $device_model = trim($data['device_model'] ?? '');
 $manufacturer = trim($data['manufacturer'] ?? '');
 $android_version = trim($data['android_version'] ?? '');
 $app_version = trim($data['app_version'] ?? '');
+$app_version_code = isset($data['app_version_code']) ? intval($data['app_version_code']) : null;
+$package_name = trim($data['package_name'] ?? '');
 $device_id = trim($data['device_id'] ?? '');
+$device_brand = trim($data['device_brand'] ?? '');
+$device_product = trim($data['device_product'] ?? '');
+$device_hardware = trim($data['device_hardware'] ?? '');
+$device_fingerprint = trim($data['device_fingerprint'] ?? '');
 $latitude = isset($data['latitude']) && $data['latitude'] !== '' ? floatval($data['latitude']) : null;
 $longitude = isset($data['longitude']) && $data['longitude'] !== '' ? floatval($data['longitude']) : null;
+$location_accuracy = isset($data['location_accuracy']) && $data['location_accuracy'] !== '' ? floatval($data['location_accuracy']) : null;
 $extra = trim($data['extra'] ?? '');
 $ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
 
@@ -36,14 +43,23 @@ if ($incident_type === '') {
     $incident_type = 'unknown';
 }
 
+$criticalTypes = ['screen_recording', 'screen_capture', 'root_device', 'usb_connection_detected', 'debugger_detected', 'tamper_detected'];
+$warningTypes = ['player_error', 'download_denied', 'location_permission_denied', 'app_block_check_failed'];
+$severity = 'info';
+if (in_array(strtolower($incident_type), $criticalTypes, true)) {
+    $severity = 'critical';
+} elseif (in_array(strtolower($incident_type), $warningTypes, true)) {
+    $severity = 'warning';
+}
+
 $stmt = $conn->prepare("
     INSERT INTO security_incidents
-    (user_id, incident_type, incident_label, app_area, device_model, manufacturer, android_version, app_version, device_id, latitude, longitude, extra, ip_address)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (user_id, incident_type, incident_label, app_area, device_model, manufacturer, android_version, app_version, app_version_code, package_name, device_id, device_brand, device_product, device_hardware, device_fingerprint, latitude, longitude, location_accuracy, extra, ip_address, severity)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
 $stmt->bind_param(
-    "issssssssddss",
+    "isssssssissssssdddsss",
     $user_id,
     $incident_type,
     $incident_label,
@@ -52,11 +68,19 @@ $stmt->bind_param(
     $manufacturer,
     $android_version,
     $app_version,
+    $app_version_code,
+    $package_name,
     $device_id,
+    $device_brand,
+    $device_product,
+    $device_hardware,
+    $device_fingerprint,
     $latitude,
     $longitude,
+    $location_accuracy,
     $extra,
-    $ip_address
+    $ip_address,
+    $severity
 );
 
 if ($stmt->execute()) {

@@ -7,8 +7,8 @@ include "auth_token_check.php";
 include "config.php";
 include "media_input_helper.php";
 
-// Fetch dramas
-$sql = "SELECT id, name, thumbnail FROM drama";
+// Fetch latest dramas first for the app home screen.
+$sql = "SELECT id, name, thumbnail, created_at FROM drama ORDER BY created_at DESC, id DESC LIMIT 14";
 $result = $conn->query($sql);
 
 $dramas = array();

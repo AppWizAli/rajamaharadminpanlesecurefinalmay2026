@@ -1,6 +1,7 @@
 <?php
 include "config.php"; 
-$response = '';
+header("Content-Type: application/json");
+$response = [];
 
 // Get the raw POST data (JSON)
 $data = json_decode(file_get_contents("php://input"), true);
@@ -18,13 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_stmt->execute();
 
             if ($update_stmt->affected_rows > 0) {
-                $response = 'Message status updated successfully to read!';
+                $response = [];
             } else {
-                $response = 'No unread messages found for this user to update.';
+                $response = [];
             }
             $update_stmt->close();
         } else {
-            $response = 'Invalid user_id or status.';
+            http_response_code(400);
+            $response = ["error" => "Invalid request data."];
         }
     } elseif (isset($data['user_id'])) {
         // Fetching messages
@@ -42,16 +44,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messages[] = $row;
             }
 
-            $response = empty($messages) ? 'No messages found.' : $messages;
+            $response = $messages;
             $stmt->close();
         } else {
-            $response = 'Invalid user_id.';
+            http_response_code(400);
+            $response = ["error" => "Invalid request data."];
         }
     } else {
-        $response = 'Invalid request data.';
+        http_response_code(400);
+        $response = ["error" => "Invalid request data."];
     }
 } else {
-    $response = 'Invalid request method.';
+    http_response_code(405);
+    $response = ["error" => "Invalid request method."];
 }
 
 $conn->close();
