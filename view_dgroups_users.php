@@ -956,7 +956,7 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                         dataType: 'json',
                         success: function(data) {
                             if (data.success) {
-                                alert('End date increased by 1 month.');
+                                alert(data.message || 'End date increased by 31 days.');
                                 $('#confirmActionModal').modal('hide');
                                 location.reload();
                             } else {

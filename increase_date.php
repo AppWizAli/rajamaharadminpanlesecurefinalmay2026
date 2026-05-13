@@ -40,7 +40,7 @@ if ($current_end_date) {
     $baseDate = $today;
 }
 
-$baseDate->add(new DateInterval('P30D'));
+$baseDate->add(new DateInterval('P31D'));
 $new_end_date = $baseDate->format('Y-m-d');
 
 // Update end_date
@@ -48,7 +48,7 @@ $update_stmt = $conn->prepare("UPDATE group_members SET end_date = ?, updated_at
 $update_stmt->bind_param("sii", $new_end_date, $user_id, $group_id);
 
 if ($update_stmt->execute()) {
-    echo json_encode(['success' => true, 'message' => 'End date increased by 30 days', 'end_date' => $new_end_date]);
+    echo json_encode(['success' => true, 'message' => 'End date increased by 31 days', 'end_date' => $new_end_date]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Database update failed']);
 }
