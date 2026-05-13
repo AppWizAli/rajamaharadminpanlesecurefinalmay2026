@@ -6,6 +6,41 @@ include "media_input_helper.php";
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+ini_set('max_execution_time', '0');
+ini_set('max_input_time', '0');
+set_time_limit(0);
+header('Content-Type: application/json');
+
+function parse_size_to_bytes($value) {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower(substr($value, -1));
+    $number = (float) $value;
+    switch ($unit) {
+        case 'g':
+            $number *= 1024;
+            // no break
+        case 'm':
+            $number *= 1024;
+            // no break
+        case 'k':
+            $number *= 1024;
+    }
+    return (int) $number;
+}
+
+$contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+$postMaxBytes = parse_size_to_bytes(ini_get('post_max_size'));
+if ($contentLength > 0 && $postMaxBytes > 0 && $contentLength > $postMaxBytes) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Upload is too large for the current server limit. Please increase post_max_size/upload_max_filesize or upload a direct video link.'
+    ]);
+    exit;
+}
 
 // Ensure admin is logged in
 if (!isset($_SESSION['admin_id'])) {

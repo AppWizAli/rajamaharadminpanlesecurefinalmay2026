@@ -112,6 +112,12 @@
           <li><a href="upload_apk.php"><i class="dw dw-upload custom-icon-size custom-icon-light"></i> Upload Apk</a></li>
         </ul>
       </li>
+
+      <li>
+        <a href="security_incidents.php">
+          <i class="fas fa-shield-alt custom-icon-size custom-icon-light"></i> Security
+        </a>
+      </li>
     </ul>
 
   </div>

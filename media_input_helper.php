@@ -99,7 +99,28 @@ function media_store_uploaded_file(array $file, $relativeDirectory, array $allow
     }
 
     if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-        throw new RuntimeException("Failed to upload {$label}.");
+        $error = $file['error'] ?? UPLOAD_ERR_OK;
+        switch ($error) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                $message = "The {$label} file is larger than the server upload limit. Increase upload_max_filesize and post_max_size, then try again.";
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $message = "The {$label} upload was interrupted. Please retry the upload.";
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+                $message = "The server is missing a temporary upload folder.";
+                break;
+            case UPLOAD_ERR_CANT_WRITE:
+                $message = "The server could not write the uploaded {$label} file.";
+                break;
+            case UPLOAD_ERR_EXTENSION:
+                $message = "The {$label} upload was blocked by a server extension.";
+                break;
+            default:
+                $message = "Failed to upload {$label}.";
+        }
+        throw new RuntimeException($message);
     }
 
     $originalName = $file['name'] ?? '';
@@ -120,8 +141,12 @@ function media_store_uploaded_file(array $file, $relativeDirectory, array $allow
     );
 
     $absolutePath = media_join_path($absoluteDirectory, $generatedName);
+    if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        throw new RuntimeException("The {$label} upload was not received correctly. Please retry the upload.");
+    }
+
     if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
-        throw new RuntimeException("Could not save uploaded {$label}.");
+        throw new RuntimeException("Could not save uploaded {$label}. Please check server disk space and folder permissions.");
     }
 
     return media_to_client_url(

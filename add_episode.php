@@ -96,8 +96,8 @@ if (!isset($_SESSION['admin_id'])) {
                                 <label class="col-sm-12 col-md-2 col-form-label">Video Link/Path</label>
                                 <div class="col-sm-12 col-md-10">
                                     <input type="text" class="form-control" name="video[]" placeholder="https://example.com/video.m3u8 or uploads/videos/file.mp4">
-                                    <small class="media-help">Paste a direct video URL/path, or choose a file below. Upload wins if both are given.</small>
-                                    <input type="file" class="form-control mt-2" name="video_file[]" accept=".mp4,.m3u8,.mkv,.webm,.mov,.ts,video/*">
+                                    <small class="media-help">Paste a direct video URL/path, or choose one file below. For another video, click Add Epi. and choose the next file there.</small>
+                                    <input type="file" class="form-control mt-2 video-file-input" name="video_file[]" accept=".mp4,.m3u8,.mkv,.webm,.mov,.ts,video/*">
                                 </div>
                             </div>
 
@@ -242,6 +242,37 @@ if (!isset($_SESSION['admin_id'])) {
             });
         }
 
+        function resetEpisodeFields(episode, newIndex) {
+            episode.querySelectorAll('input, textarea').forEach((field) => {
+                if (field.type === 'radio') {
+                    if (field.value === 'public' || field.value === 'private') {
+                        field.name = `privacyOptions[${newIndex}]`;
+                    } else {
+                        field.name = `downloadAccessOptions[${newIndex}]`;
+                    }
+                    field.checked = field.value === 'private' || field.value === 'appStorage';
+                    return;
+                }
+
+                if (field.type === 'file') {
+                    field.value = '';
+                    return;
+                }
+
+                if (field.name === 'episode_number[]') {
+                    const previous = parseInt(field.value || '0', 10);
+                    field.value = Number.isFinite(previous) && previous > 0 ? previous + 1 : '';
+                    return;
+                }
+
+                field.value = '';
+            });
+
+            episode.querySelector('.episode-progress-bar').style.width = '0%';
+            episode.querySelector('.episode-progress-bar').textContent = '0%';
+            episode.querySelector('.episode-status').textContent = '';
+        }
+
         document.getElementById('submitEpisodesBtn').addEventListener('click', async function(event) {
             event.preventDefault();
 
@@ -303,25 +334,7 @@ if (!isset($_SESSION['admin_id'])) {
             const template = sourceEpisode.cloneNode(true);
             const newIndex = episodes.length;
 
-            template.querySelectorAll('input, textarea').forEach((field) => {
-                if (field.type === 'radio') {
-                    if (field.value === 'public' || field.value === 'private') {
-                        field.name = `privacyOptions[${newIndex}]`;
-                    } else {
-                        field.name = `downloadAccessOptions[${newIndex}]`;
-                    }
-                    return;
-                }
-
-                if (field.type === 'file') {
-                    field.value = '';
-                    return;
-                }
-            });
-
-            template.querySelector('.episode-progress-bar').style.width = '0%';
-            template.querySelector('.episode-progress-bar').textContent = '0%';
-            template.querySelector('.episode-status').textContent = '';
+            resetEpisodeFields(template, newIndex);
             container.appendChild(template);
         });
     </script>
