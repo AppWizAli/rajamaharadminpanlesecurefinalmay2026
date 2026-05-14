@@ -59,9 +59,10 @@ if ($apkFileType !== 'apk') {
     redirect_with_message('error', 'Only APK files are allowed.');
 }
 
-$uploadDir = 'uploads/apk/';
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0755, true);
+$uploadDirRelative = 'uploads/apk/';
+$uploadDirFs = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'apk' . DIRECTORY_SEPARATOR;
+if (!is_dir($uploadDirFs)) {
+    mkdir($uploadDirFs, 0755, true);
 }
 
 $tempPath = $_FILES["apk_file"]["tmp_name"];
@@ -93,15 +94,16 @@ if ($latest && $latest->num_rows > 0) {
 
 $safeName = safe_apk_name($originalName);
 $fileName = $safeName . '_v' . preg_replace('/[^A-Za-z0-9._-]/', '_', $versionName) . '_' . date('Ymd_His') . '.apk';
-$apkPath = $uploadDir . $fileName;
+$apkPath = $uploadDirRelative . $fileName;
+$apkPathFs = $uploadDirFs . $fileName;
 
-if (!move_uploaded_file($tempPath, $apkPath)) {
+if (!move_uploaded_file($tempPath, $apkPathFs)) {
     redirect_with_message('error', 'APK upload failed while saving the file.');
 }
 
 $conn->query("UPDATE apk_files SET is_active = 0");
 $adminId = intval($_SESSION['admin_id']);
-$fileSize = filesize($apkPath);
+$fileSize = filesize($apkPathFs);
 $stmt = $conn->prepare("
     INSERT INTO apk_files (`string`, version_name, version_code, apk_url, original_name, file_size, is_active, uploaded_by)
     VALUES (?, ?, ?, ?, ?, ?, 1, ?)
@@ -110,7 +112,7 @@ $legacyString = $versionName;
 $stmt->bind_param("ssissii", $legacyString, $versionName, $versionCode, $apkPath, $originalName, $fileSize, $adminId);
 
 if (!$stmt->execute()) {
-    @unlink($apkPath);
+    @unlink($apkPathFs);
     redirect_with_message('error', 'APK was saved but database record failed.');
 }
 

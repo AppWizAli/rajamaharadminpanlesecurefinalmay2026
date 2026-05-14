@@ -14,6 +14,11 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function public_apk_url($path) {
+    $path = ltrim(str_replace('\\', '/', (string)$path), '/');
+    return $path === '' ? '#' : $path;
+}
+
 $latest = $conn->query("SELECT * FROM apk_files WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1");
 $latestApk = $latest && $latest->num_rows > 0 ? $latest->fetch_assoc() : null;
 $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 50");
@@ -85,7 +90,7 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
                                 File: <?php echo h($latestApk['original_name'] ?: basename($latestApk['apk_url'])); ?><br>
                                 Size: <?php echo number_format((intval($latestApk['file_size']) / 1024 / 1024), 2); ?> MB
                             </div>
-                            <a class="btn btn-sm btn-outline-primary mt-3" href="<?php echo h($latestApk['apk_url']); ?>">Download Current</a>
+                            <a class="btn btn-sm btn-outline-primary mt-3" href="<?php echo h(public_apk_url($latestApk['apk_url'])); ?>">Download Current</a>
                         </div>
                     <?php else: ?>
                         <p class="text-muted mt-3">No APK uploaded yet.</p>
@@ -158,7 +163,7 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
                                     <div class="meta"><?php echo number_format((intval($row['file_size']) / 1024 / 1024), 2); ?> MB</div>
                                 </td>
                                 <td><?php echo h($row['created_at']); ?></td>
-                                <td><a class="btn btn-sm btn-outline-primary" href="<?php echo h($row['apk_url']); ?>">Download</a></td>
+                                <td><a class="btn btn-sm btn-outline-primary" href="<?php echo h(public_apk_url($row['apk_url'])); ?>">Download</a></td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
