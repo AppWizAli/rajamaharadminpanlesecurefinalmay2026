@@ -114,6 +114,12 @@
       </li>
 
       <li>
+        <a href="subscription_requests.php">
+          <i class="fas fa-money-check-alt custom-icon-size custom-icon-light"></i> Subscriptions
+        </a>
+      </li>
+
+      <li>
         <a href="security_incidents.php">
           <i class="fas fa-shield-alt custom-icon-size custom-icon-light"></i> Security
         </a>
