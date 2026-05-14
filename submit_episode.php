@@ -75,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'relativeDirectory' => 'uploads/videos',
                 'allowedExtensions' => ['mp4', 'm3u8', 'mkv', 'webm', 'mov', 'ts'],
                 'prefix' => 'episode_video',
+                'stagedUploadToken' => $_POST['video_upload_token'] ?? '',
+                'stagedUploadPurpose' => 'episode_video',
                 'required' => true
             ]
         );

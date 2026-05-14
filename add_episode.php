@@ -189,6 +189,7 @@ if (!isset($_SESSION['admin_id'])) {
     <script src="vendors/scripts/script.min.js"></script>
     <script src="vendors/scripts/process.js"></script>
     <script src="vendors/scripts/layout-settings.js"></script>
+    <script src="vendors/scripts/resumable-upload.js"></script>
     <script src="vendors/js/jquery-3.3.1.slim.min.js"></script>
     <script src="vendors/js/popper.min.js"></script>
     <script src="vendors/js/jquery-3.3.1.min.js"></script>
@@ -204,42 +205,65 @@ if (!isset($_SESSION['admin_id'])) {
             });
         });
 
-        async function uploadEpisode(formData, onProgress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'submit_episode.php', true);
-
-                xhr.upload.onprogress = function(event) {
-                    if (event.lengthComputable) {
-                        const percentComplete = Math.round((event.loaded / event.total) * 100);
-                        onProgress(percentComplete);
+        async function uploadEpisode(formData, videoFile, onProgress, onStatus) {
+            if (videoFile) {
+                const chunkUpload = await window.ResumablePanelUpload.uploadFileInChunks({
+                    endpoint: 'upload_chunk.php',
+                    purpose: 'episode_video',
+                    file: videoFile,
+                    chunkSize: 4 * 1024 * 1024,
+                    maxRetries: 4,
+                    retryBaseDelay: 1200,
+                    onStart: function() {
+                        onStatus('Uploading video in secure chunks...', 'black');
+                    },
+                    onProgress: function(progressState) {
+                        onProgress(progressState.percent);
+                        onStatus(
+                            `Uploading video chunk ${progressState.chunkIndex + 1} of ${progressState.totalChunks}...`,
+                            'black'
+                        );
+                    },
+                    onRetry: function(retryState) {
+                        onStatus(
+                            `Connection interrupted. Retrying chunk ${retryState.chunkIndex + 1}/${retryState.totalChunks} (${retryState.attempt}/${retryState.maxRetries})...`,
+                            'red'
+                        );
+                    },
+                    onComplete: function() {
+                        onProgress(100);
+                        onStatus('Video upload completed. Saving episode...', 'green');
                     }
-                };
+                });
 
-                xhr.onload = function() {
-                    if (xhr.status !== 200) {
-                        reject(new Error(`HTTP error: ${xhr.status}`));
-                        return;
-                    }
+                formData.append('video_upload_token', chunkUpload.uploadId);
+            }
 
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.status === 'success') {
-                            resolve(response);
-                            return;
-                        }
-                        reject(new Error(response.message || 'Upload failed.'));
-                    } catch (error) {
-                        reject(new Error('Invalid server response.'));
-                    }
-                };
-
-                xhr.onerror = function() {
-                    reject(new Error('Network error during upload.'));
-                };
-
-                xhr.send(formData);
+            const finalResponse = await window.ResumablePanelUpload.postFormWithRetry({
+                url: 'submit_episode.php',
+                formData: formData,
+                maxRetries: 2,
+                retryBaseDelay: 1000,
+                onRetry: function(retryState) {
+                    onStatus(
+                        `Final save request retrying (${retryState.attempt}/${retryState.maxRetries})...`,
+                        'red'
+                    );
+                }
             });
+
+            try {
+                const response = JSON.parse(finalResponse.responseText || '{}');
+                if (response.status === 'success') {
+                    return response;
+                }
+                throw new Error(response.message || 'Upload failed.');
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error;
+                }
+                throw new Error('Invalid server response.');
+            }
         }
 
         function resetEpisodeFields(episode, newIndex) {
@@ -278,8 +302,12 @@ if (!isset($_SESSION['admin_id'])) {
 
             const seasonId = new URLSearchParams(window.location.search).get('season_id');
             const episodes = document.querySelectorAll('.episode');
+            const submitButton = document.getElementById('submitEpisodesBtn');
             let errorsOccurred = false;
             const errorMessages = [];
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner"></i> Uploading...';
 
             for (let i = 0; i < episodes.length; i++) {
                 const episode = episodes[i];
@@ -297,16 +325,18 @@ if (!isset($_SESSION['admin_id'])) {
 
                 const videoFile = episode.querySelector('input[name="video_file[]"]').files[0];
                 const thumbnailFile = episode.querySelector('input[name="thumbnail_file[]"]').files[0];
-                if (videoFile) formData.append('video_file', videoFile);
                 if (thumbnailFile) formData.append('thumbnail_file', thumbnailFile);
 
-                statusElement.textContent = `Uploading episode ${i + 1}/${episodes.length}...`;
+                statusElement.textContent = `Preparing episode ${i + 1}/${episodes.length}...`;
                 statusElement.style.color = 'black';
 
                 try {
-                    await uploadEpisode(formData, (progress) => {
+                    await uploadEpisode(formData, videoFile, (progress) => {
                         progressBar.style.width = `${progress}%`;
                         progressBar.textContent = `${progress}%`;
+                    }, (message, color) => {
+                        statusElement.textContent = message;
+                        statusElement.style.color = color || 'black';
                     });
 
                     statusElement.textContent = `Episode ${i + 1}/${episodes.length} uploaded successfully.`;
@@ -320,6 +350,8 @@ if (!isset($_SESSION['admin_id'])) {
             }
 
             if (errorsOccurred) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
                 alert('Some episodes failed:\n' + errorMessages.join('\n'));
                 return;
             }

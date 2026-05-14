@@ -1,5 +1,7 @@
 <?php
 
+include_once __DIR__ . DIRECTORY_SEPARATOR . 'chunk_upload_helper.php';
+
 function media_join_path($base, $child) {
     return rtrim($base, "/\\") . DIRECTORY_SEPARATOR . ltrim($child, "/\\");
 }
@@ -154,11 +156,53 @@ function media_store_uploaded_file(array $file, $relativeDirectory, array $allow
     );
 }
 
+function media_store_staged_upload($uploadToken, $stagedPurpose, $relativeDirectory, array $allowedExtensions, $prefix, $label) {
+    $uploadToken = trim((string) $uploadToken);
+    if ($uploadToken === '') {
+        return '';
+    }
+
+    $meta = chunk_upload_read_meta($uploadToken);
+    if (($meta['purpose'] ?? '') !== $stagedPurpose) {
+        throw new RuntimeException("Unsupported {$label} upload session.");
+    }
+
+    $originalName = chunk_upload_safe_name($meta['original_name'] ?? 'upload.bin');
+    $ext = media_guess_extension($originalName);
+    if (!in_array($ext, $allowedExtensions, true)) {
+        chunk_upload_cleanup($uploadToken);
+        throw new RuntimeException("Unsupported {$label} file type.");
+    }
+
+    $absoluteDirectory = media_join_path(__DIR__, $relativeDirectory);
+    media_ensure_directory($absoluteDirectory);
+
+    $generatedName = sprintf(
+        '%s_%s_%s.%s',
+        $prefix,
+        date('Ymd_His'),
+        bin2hex(random_bytes(6)),
+        $ext
+    );
+
+    $absolutePath = media_join_path($absoluteDirectory, $generatedName);
+    $claimed = chunk_upload_claim_file($uploadToken, $stagedPurpose, $absolutePath);
+    if (empty($claimed['absolute_path']) || !is_file($claimed['absolute_path'])) {
+        throw new RuntimeException("Could not save uploaded {$label}. Please check server disk space and folder permissions.");
+    }
+
+    return media_to_client_url(
+        media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName)
+    );
+}
+
 function resolve_media_value(array $file, $textValue, array $options) {
     $label = $options['label'];
     $relativeDirectory = $options['relativeDirectory'];
     $allowedExtensions = $options['allowedExtensions'];
     $prefix = $options['prefix'];
+    $stagedUploadToken = trim((string) ($options['stagedUploadToken'] ?? ''));
+    $stagedUploadPurpose = trim((string) ($options['stagedUploadPurpose'] ?? ''));
     $allowRemote = $options['allowRemote'] ?? true;
     $allowRelative = $options['allowRelative'] ?? true;
     $required = $options['required'] ?? false;
@@ -167,6 +211,20 @@ function resolve_media_value(array $file, $textValue, array $options) {
     $uploadedValue = media_store_uploaded_file($file, $relativeDirectory, $allowedExtensions, $prefix, $label);
     if ($uploadedValue !== '') {
         return $uploadedValue;
+    }
+
+    if ($stagedUploadToken !== '' && $stagedUploadPurpose !== '') {
+        $stagedValue = media_store_staged_upload(
+            $stagedUploadToken,
+            $stagedUploadPurpose,
+            $relativeDirectory,
+            $allowedExtensions,
+            $prefix,
+            $label
+        );
+        if ($stagedValue !== '') {
+            return $stagedValue;
+        }
     }
 
     $textValue = trim((string) $textValue);

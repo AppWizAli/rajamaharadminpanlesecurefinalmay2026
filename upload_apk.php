@@ -207,10 +207,11 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
+<script src="vendors/scripts/resumable-upload.js"></script>
 <script>
 (function () {
     var form = document.getElementById('apk-upload-form');
-    if (!form || typeof XMLHttpRequest === 'undefined') {
+    if (!form || typeof XMLHttpRequest === 'undefined' || !window.ResumablePanelUpload) {
         return;
     }
 
@@ -272,55 +273,81 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
         }
 
         var file = fileInput.files[0];
-        var xhr = new XMLHttpRequest();
-        var formData = new FormData(form);
 
         progressCard.classList.add('is-visible');
         updateProgress(0, file.size || 0);
         fileLabel.textContent = file.name;
-        setStatus('Uploading APK to server...', '');
+        setStatus('Preparing upload...', '');
         submitButton.disabled = true;
         submitButton.textContent = 'Uploading...';
 
-        xhr.open('POST', form.action, true);
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        (async function () {
+            try {
+                var chunkUpload = await window.ResumablePanelUpload.uploadFileInChunks({
+                    endpoint: 'upload_chunk.php',
+                    purpose: 'apk',
+                    file: file,
+                    chunkSize: 4 * 1024 * 1024,
+                    maxRetries: 4,
+                    retryBaseDelay: 1200,
+                    onStart: function () {
+                        setStatus('Uploading APK in secure chunks...', '');
+                    },
+                    onProgress: function (progressState) {
+                        updateProgress(progressState.loaded, progressState.total);
+                        setStatus(
+                            'Uploading chunk ' + (progressState.chunkIndex + 1) + ' of ' + progressState.totalChunks + '...',
+                            ''
+                        );
+                    },
+                    onRetry: function (retryState) {
+                        setStatus(
+                            'Connection interrupted. Retrying chunk ' +
+                                (retryState.chunkIndex + 1) +
+                                ' of ' +
+                                retryState.totalChunks +
+                                ' (' +
+                                retryState.attempt +
+                                '/' +
+                                retryState.maxRetries +
+                                ')...',
+                            'is-error'
+                        );
+                    },
+                    onComplete: function () {
+                        updateProgress(file.size || 0, file.size || 0);
+                        setStatus('Upload completed. Finalizing APK version...', 'is-success');
+                    }
+                });
 
-        xhr.upload.addEventListener('progress', function (progressEvent) {
-            if (!progressEvent.lengthComputable) {
-                percentLabel.textContent = '...';
-                bytesLabel.textContent = formatBytes(progressEvent.loaded) + ' uploaded';
-                setStatus('Uploading APK to server...', '');
-                return;
+                var finalFormData = new FormData(form);
+                finalFormData.delete('apk_file');
+                finalFormData.append('apk_upload_token', chunkUpload.uploadId);
+
+                await window.ResumablePanelUpload.postFormWithRetry({
+                    url: form.action,
+                    formData: finalFormData,
+                    maxRetries: 2,
+                    retryBaseDelay: 1000,
+                    onRetry: function (retryState) {
+                        setStatus(
+                            'Final save request is retrying (' +
+                                retryState.attempt +
+                                '/' +
+                                retryState.maxRetries +
+                                ')...',
+                            'is-error'
+                        );
+                    }
+                }).then(function (response) {
+                    window.location.href = response.responseURL || 'upload_apk.php?success=' + encodeURIComponent('APK uploaded successfully.');
+                });
+            } catch (error) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+                setStatus(error.message || 'Upload failed. Please try again.', 'is-error');
             }
-            updateProgress(progressEvent.loaded, progressEvent.total);
-            setStatus('Uploading APK to server...', '');
-        });
-
-        xhr.addEventListener('load', function () {
-            if (xhr.status >= 200 && xhr.status < 400) {
-                updateProgress(file.size || 0, file.size || 0);
-                setStatus('Upload completed. Finalizing APK version...', 'is-success');
-                window.location.href = xhr.responseURL || 'upload_apk.php?success=' + encodeURIComponent('APK uploaded successfully.');
-                return;
-            }
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
-            setStatus('Upload failed. Please try again.', 'is-error');
-        });
-
-        xhr.addEventListener('error', function () {
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
-            setStatus('Upload failed because the connection was interrupted.', 'is-error');
-        });
-
-        xhr.addEventListener('abort', function () {
-            submitButton.disabled = false;
-            submitButton.textContent = originalButtonText;
-            setStatus('Upload was cancelled before completion.', 'is-error');
-        });
-
-        xhr.send(formData);
+        })();
     });
 })();
 </script>

@@ -2,6 +2,7 @@
 session_start();
 include "config.php";
 include "apk_schema.php";
+include "chunk_upload_helper.php";
 
 if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
@@ -49,14 +50,11 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST" || !isset($_POST['upload_apk'])) {
     redirect_with_message('error', 'Invalid APK upload request.');
 }
 
-if (!isset($_FILES['apk_file']) || $_FILES['apk_file']['error'] !== UPLOAD_ERR_OK) {
+if (
+    (!isset($_FILES['apk_file']) || ($_FILES['apk_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) &&
+    trim((string) ($_POST['apk_upload_token'] ?? '')) === ''
+) {
     redirect_with_message('error', 'No APK file was uploaded.');
-}
-
-$originalName = basename($_FILES["apk_file"]["name"]);
-$apkFileType = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-if ($apkFileType !== 'apk') {
-    redirect_with_message('error', 'Only APK files are allowed.');
 }
 
 $uploadDirRelative = 'uploads/apk/';
@@ -65,7 +63,33 @@ if (!is_dir($uploadDirFs)) {
     mkdir($uploadDirFs, 0755, true);
 }
 
-$tempPath = $_FILES["apk_file"]["tmp_name"];
+$apkUploadToken = trim((string) ($_POST['apk_upload_token'] ?? ''));
+$isChunkUpload = $apkUploadToken !== '';
+$originalName = '';
+$tempPath = '';
+
+if ($isChunkUpload) {
+    try {
+        $chunkMeta = chunk_upload_materialize($apkUploadToken, 'apk');
+        $originalName = basename($chunkMeta['original_name']);
+        $tempPath = $chunkMeta['tmp_path'];
+    } catch (RuntimeException $e) {
+        redirect_with_message('error', $e->getMessage());
+    }
+} else {
+    $originalName = basename($_FILES["apk_file"]["name"]);
+    $tempPath = $_FILES["apk_file"]["tmp_name"];
+}
+
+$apkFileType = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+if ($apkFileType !== 'apk') {
+    if ($isChunkUpload) {
+        @unlink($tempPath);
+        chunk_upload_cleanup($apkUploadToken);
+    }
+    redirect_with_message('error', 'Only APK files are allowed.');
+}
+
 $versionName = trim($_POST['version_name'] ?? $_POST['apk_str'] ?? '');
 $versionCode = isset($_POST['version_code']) && $_POST['version_code'] !== '' ? intval($_POST['version_code']) : null;
 $badging = read_apk_badging($tempPath);
@@ -76,6 +100,10 @@ if ($versionCode === null && !empty($badging['version_code'])) {
     $versionCode = intval($badging['version_code']);
 }
 if ($versionName === '') {
+    if ($isChunkUpload) {
+        @unlink($tempPath);
+        chunk_upload_cleanup($apkUploadToken);
+    }
     redirect_with_message('error', 'Please enter the APK version number.');
 }
 
@@ -85,9 +113,17 @@ if ($latest && $latest->num_rows > 0) {
     $oldCode = $row['version_code'] !== null ? intval($row['version_code']) : null;
     $oldName = $row['version_name'] ?: $row['string'];
     if ($versionCode !== null && $oldCode !== null && $versionCode <= $oldCode) {
+        if ($isChunkUpload) {
+            @unlink($tempPath);
+            chunk_upload_cleanup($apkUploadToken);
+        }
         redirect_with_message('error', 'New APK version code must be greater than the current APK.');
     }
     if ($versionCode === null && $oldCode === null && version_compare($versionName, $oldName, '<=')) {
+        if ($isChunkUpload) {
+            @unlink($tempPath);
+            chunk_upload_cleanup($apkUploadToken);
+        }
         redirect_with_message('error', 'New APK version must be greater than the current APK.');
     }
 }
@@ -97,7 +133,20 @@ $fileName = $safeName . '_v' . preg_replace('/[^A-Za-z0-9._-]/', '_', $versionNa
 $apkPath = $uploadDirRelative . $fileName;
 $apkPathFs = $uploadDirFs . $fileName;
 
-if (!move_uploaded_file($tempPath, $apkPathFs)) {
+if ($isChunkUpload) {
+    $moved = @rename($tempPath, $apkPathFs);
+    if (!$moved) {
+        $moved = @copy($tempPath, $apkPathFs);
+        if ($moved) {
+            @unlink($tempPath);
+        }
+    }
+    chunk_upload_cleanup($apkUploadToken);
+} else {
+    $moved = move_uploaded_file($tempPath, $apkPathFs);
+}
+
+if (!$moved) {
     redirect_with_message('error', 'APK upload failed while saving the file.');
 }
 
