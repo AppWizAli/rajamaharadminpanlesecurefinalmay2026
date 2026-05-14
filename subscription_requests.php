@@ -193,7 +193,7 @@ $requestsSql = "
         u.username,
         u.email,
         g.group_name,
-        approver.username AS approved_by_name
+        approver.admin_name AS approved_by_name
     FROM subscription_requests sr
     LEFT JOIN users u ON u.id = sr.user_id
     LEFT JOIN `groups` g ON g.id = sr.group_id
