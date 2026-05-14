@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+include "subscription_schema.php";
 session_start();
 
 // Enable error reporting for debugging
@@ -63,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user_to_group'])) 
     $comment = isset($_POST['comment']) ? trim($_POST['comment']) : '';
     $subscription = 0; 
     $created_at = date('Y-m-d H:i:s'); 
-    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : date('Y-m-d', strtotime($created_at . ' +30 days'));
+    $start_date = date('Y-m-d');
+    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : date('Y-m-d', strtotime($created_at . ' +31 days'));
 
     if ($group_id > 0 && $user_id > 0) {
         $sql = "SELECT * FROM group_members WHERE group_id = ? AND user_id = ?";
@@ -76,13 +78,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user_to_group'])) 
         $result = $stmt->get_result();
 
         if ($result->num_rows == 0) {
-            $sql = "INSERT INTO group_members (group_id, user_id, comment, subscription, end_date, created_at) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO group_members (group_id, user_id, comment, subscription, start_date, end_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
             if ($stmt === false) {
                 die("Error preparing SQL: " . $conn->error);
             }
-            $stmt->bind_param("iisiss", $group_id, $user_id, $comment, $subscription, $end_date, $created_at);
+            $stmt->bind_param("iisisss", $group_id, $user_id, $comment, $subscription, $start_date, $end_date, $created_at);
             if ($stmt->execute()) {
+                $settings = get_subscription_settings($conn);
+                subscription_create_approved_invoice_record($conn, [
+                    'user_id' => $user_id,
+                    'group_id' => $group_id,
+                    'amount' => $settings['monthly_amount'] ?? '0.00',
+                    'currency' => $settings['currency'] ?? 'PKR',
+                    'payment_method' => 'Admin Assignment',
+                    'note' => $comment,
+                    'admin_note' => 'User added to group manually from group management.',
+                    'details_snapshot' => subscription_build_details_snapshot($settings),
+                    'subscription_start_date' => $start_date,
+                    'subscription_end_date' => $end_date,
+                    'approved_by' => intval($_SESSION['admin_id'] ?? 0)
+                ]);
                 echo "User added to group successfully.";
             } else {
                 echo "Error adding user to group: " . $stmt->error;

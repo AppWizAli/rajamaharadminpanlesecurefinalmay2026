@@ -469,6 +469,9 @@ if (!empty($requestUserIds)) {
         }
         .detail-membership-line:last-child { margin-bottom: 0; }
         .approve-state-text { min-height: 20px; }
+        .subscription-detail-dialog {
+            max-width: min(1280px, calc(100vw - 48px));
+        }
         .modal-content {
             border-radius: 22px;
             border: 0;
@@ -487,10 +490,196 @@ if (!empty($requestUserIds)) {
             background: #fff;
             padding: 22px;
         }
+        .request-detail-layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+        .request-media-panel {
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .request-main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .request-top-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .request-stat-card {
+            border: 1px solid var(--sub-border);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            padding: 14px;
+            min-height: 96px;
+        }
+        .request-stat-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--sub-muted);
+            margin-bottom: 6px;
+        }
+        .request-stat-value {
+            color: var(--sub-ink);
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+        .request-stat-sub {
+            margin-top: 4px;
+            color: var(--sub-muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .request-panel {
+            border: 1px solid var(--sub-border);
+            border-radius: 18px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .request-panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--sub-border);
+            background: #fbfcfe;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .request-panel-title {
+            color: var(--sub-ink);
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+        }
+        .request-panel-body {
+            padding: 16px;
+        }
+        .request-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 16px;
+        }
+        .request-overview-item {
+            min-width: 0;
+        }
+        .request-overview-item strong {
+            display: block;
+            color: var(--sub-ink);
+            margin-bottom: 4px;
+        }
+        .request-overview-item span,
+        .request-overview-item div {
+            color: #344054;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+        .request-actions-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.9fr);
+            gap: 16px;
+        }
+        .request-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .request-form-grid .request-form-span-2 {
+            grid-column: 1 / -1;
+        }
+        .request-live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .request-live-status.active {
+            background: #e7f6ec;
+            color: #027a48;
+        }
+        .request-live-status.inactive {
+            background: #fff4d6;
+            color: #9a6700;
+        }
+        .live-membership-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .live-membership-item {
+            border: 1px solid var(--sub-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: var(--sub-panel);
+        }
+        .live-membership-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .live-membership-name {
+            color: var(--sub-ink);
+            font-weight: 800;
+        }
+        .live-membership-date {
+            color: #344054;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .request-reject-box textarea,
+        .request-main-panel textarea {
+            resize: vertical;
+        }
+        .invoice-row-live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .invoice-row-live-badge.active {
+            background: #e7f6ec;
+            color: #027a48;
+        }
+        .invoice-row-live-badge.inactive {
+            background: #fff4d6;
+            color: #9a6700;
+        }
         @media (max-width: 768px) {
             .filters-grid, .settings-grid, .detail-grid { grid-template-columns: 1fr; }
             .invoice-row { grid-template-columns: 1fr; justify-items: start; }
             .invoice-row-actions { justify-content: flex-start; }
+            .subscription-detail-dialog {
+                max-width: calc(100vw - 16px);
+                margin: 0.5rem auto;
+            }
+            .request-detail-layout,
+            .request-top-summary,
+            .request-overview-grid,
+            .request-actions-grid,
+            .request-form-grid {
+                grid-template-columns: 1fr;
+            }
+            .request-media-panel {
+                position: static;
+            }
         }
     </style>
 </head>
@@ -627,12 +816,19 @@ if (!empty($requestUserIds)) {
                                     'is_active' => intval($membership['is_active'] ?? 0)
                                 ];
                             }
+                            $hasActiveMembership = false;
+                            foreach ($membershipMeta as $membershipInfo) {
+                                if (intval($membershipInfo['is_active'] ?? 0) === 1) {
+                                    $hasActiveMembership = true;
+                                    break;
+                                }
+                            }
                             $liveSummary = $primaryMembership
                                 ? (($primaryMembership['group_name'] ?? 'Group') . ' | ' . ($primaryMembership['end_date'] ?: '-') . ' | ' . (intval($primaryMembership['is_active'] ?? 0) === 1 ? 'Active' : 'Expired'))
                                 : 'No group row yet';
                             $snapshotSummary = render_snapshot_summary($row['details_snapshot'] ?? '');
                             ?>
-                            <div class="invoice-row">
+                            <div class="invoice-row" data-request-id="<?php echo intval($row['id']); ?>" data-request-user-id="<?php echo $userId; ?>">
                                 <div>
                                     <?php if (!empty($row['screenshot_url'])): ?>
                                         <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="invoice-row-thumb">
@@ -660,142 +856,239 @@ if (!empty($requestUserIds)) {
                                 </div>
                                 <div class="invoice-row-live">
                                     <div><strong>Live Row</strong></div>
-                                    <div><?php echo h($liveSummary); ?></div>
+                                    <div class="js-live-row-summary"><?php echo h($liveSummary); ?></div>
+                                    <div class="invoice-row-live-badge js-live-row-badge <?php echo $hasActiveMembership ? 'active' : 'inactive'; ?>">
+                                        <?php echo $hasActiveMembership ? 'Subscription Active' : 'No Active Subscription'; ?>
+                                    </div>
                                 </div>
                                 <div class="invoice-row-actions">
                                     <button
                                         type="button"
                                         class="sub-btn sub-btn-primary js-view-request"
                                         data-title="<?php echo h(($row['invoice_no'] ?: ('Request #' . intval($row['id']))) . ' - ' . ($row['username'] ?? 'Unknown')); ?>"
-                                        data-target="#requestDetailTemplate<?php echo intval($row['id']); ?>">
+                                        data-target="#requestDetailTemplate<?php echo intval($row['id']); ?>"
+                                        data-request-id="<?php echo intval($row['id']); ?>"
+                                        data-user-id="<?php echo $userId; ?>">
                                         <i class="fa fa-eye"></i> View Details
                                     </button>
                                 </div>
                             </div>
 
                             <div id="requestDetailTemplate<?php echo intval($row['id']); ?>" class="sub-hidden-template">
-                                <div class="detail-grid">
-                                    <div>
-                                        <?php if (!empty($row['screenshot_url'])): ?>
-                                            <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank">
-                                                <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="detail-screenshot">
-                                            </a>
-                                        <?php else: ?>
-                                            <div class="detail-box text-muted text-center">No screenshot uploaded.</div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div>
-                                        <div class="d-flex align-items-center flex-wrap mb-2" style="gap:8px;">
-                                            <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
-                                            <strong>#<?php echo intval($row['id']); ?></strong>
-                                        </div>
-                                        <div><strong>User:</strong> #<?php echo $userId; ?> <?php echo h($row['username'] ?? 'Unknown'); ?></div>
-                                        <div class="meta"><?php echo h($row['email'] ?? ''); ?></div>
-                                        <div class="mt-2"><strong>Amount:</strong> <?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
-                                        <div><strong>Method:</strong> <?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
-                                        <div><strong>Requested:</strong> <?php echo h($row['created_at']); ?></div>
-                                        <div><strong>Invoice:</strong> <?php echo h($row['invoice_no'] ?: 'Not generated yet'); ?></div>
-                                        <div><strong>Selected Group:</strong> <?php echo h($row['group_name'] ?: 'Not selected yet'); ?></div>
-                                        <?php if (!empty($row['screenshot_url'])): ?>
-                                            <div class="mt-3">
-                                                <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank" class="sub-btn sub-btn-light">
-                                                    <i class="fa fa-image"></i> Open Screenshot
-                                                </a>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-
-                                <?php if ($snapshotSummary !== ''): ?>
-                                    <div class="detail-box">
-                                        <div class="detail-box-title">Payment Details Snapshot</div>
-                                        <div class="meta"><?php echo nl2br(h($snapshotSummary)); ?></div>
-                                    </div>
-                                <?php endif; ?>
-
-                                <?php if (!empty($row['note'])): ?>
-                                    <div class="detail-box">
-                                        <div class="detail-box-title">User Note</div>
-                                        <div class="meta"><?php echo nl2br(h($row['note'])); ?></div>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="detail-box">
-                                    <div class="detail-box-title">Current Group Subscription Rows</div>
-                                    <?php if (!empty($memberships)): ?>
-                                        <?php foreach ($memberships as $membership): ?>
-                                            <div class="detail-membership-line">
-                                                <?php echo h($membership['group_name'] ?? 'Group'); ?>
-                                                |
-                                                <?php echo h($membership['start_date'] ?: '-'); ?> to <?php echo h($membership['end_date'] ?: '-'); ?>
-                                                |
-                                                <?php echo intval($membership['is_active'] ?? 0) === 1 ? 'Active' : 'Expired'; ?>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <div class="detail-membership-line">No group subscription row exists yet for this user.</div>
-                                    <?php endif; ?>
-                                </div>
-
-                                <?php if ($row['status'] === 'pending'): ?>
-                                    <div class="detail-box">
-                                        <div class="detail-box-title">Approve Subscription</div>
-                                        <form method="post" action="subscription_request_action.php" class="subscription-approval-form" data-membership-meta="<?php echo h(json_encode($membershipMeta)); ?>">
-                                            <input type="hidden" name="action" value="approve">
-                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
-                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
-                                            <label>Target Group For This Invoice</label>
-                                            <select class="form-control mb-2 approval-group-select" name="group_id">
-                                                <option value="0">Select group</option>
-                                                <?php foreach ($groups as $group): ?>
-                                                    <option value="<?php echo intval($group['id']); ?>" <?php echo $selectedGroupId === intval($group['id']) ? 'selected' : ''; ?>>
-                                                        <?php echo h($group['group_name']); ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <div class="meta approve-state-text mb-2"></div>
-                                            <label>Admin Note</label>
-                                            <textarea class="form-control mb-3" name="admin_note" rows="3" placeholder="Optional note for approval"></textarea>
-                                            <button class="sub-btn sub-btn-primary approve-action-btn" type="submit" <?php echo empty($groups) ? 'disabled' : ''; ?>>
-                                                <i class="fa fa-check"></i> Approve Subscription
-                                            </button>
-                                        </form>
-                                    </div>
-
-                                    <div class="detail-box">
-                                        <div class="detail-box-title">Reject Request</div>
-                                        <form method="post" action="subscription_request_action.php">
-                                            <input type="hidden" name="action" value="reject">
-                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
-                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
-                                            <label>Reject Note</label>
-                                            <textarea class="form-control mb-3" name="admin_note" rows="2" placeholder="Optional reason"></textarea>
-                                            <button class="sub-btn sub-btn-danger" type="submit">
-                                                <i class="fa fa-times"></i> Reject
-                                            </button>
-                                        </form>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="detail-box">
-                                        <div class="detail-box-title">Subscription Result</div>
-                                        <div class="meta">
-                                            <?php if ($row['status'] === 'approved'): ?>
-                                                Approved: <?php echo h($row['approved_at']); ?><br>
-                                                Invoice Subscription: <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?><br>
-                                                Months Added: <?php echo intval($row['months_added']); ?><br>
-                                                Approved By: <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?><br>
-                                                <?php if ($primaryMembership): ?>
-                                                    Live Group Row: <?php echo h($primaryMembership['group_name'] ?? 'Group'); ?> | <?php echo h($primaryMembership['start_date'] ?: '-'); ?> to <?php echo h($primaryMembership['end_date'] ?: '-'); ?>
+                                <div class="request-detail-layout" data-request-id="<?php echo intval($row['id']); ?>" data-user-id="<?php echo $userId; ?>">
+                                    <div class="request-media-panel">
+                                        <div class="request-panel">
+                                            <div class="request-panel-head">
+                                                <h6 class="request-panel-title mb-0">Payment Proof</h6>
+                                                <?php if (!empty($row['screenshot_url'])): ?>
+                                                    <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank" class="sub-btn sub-btn-light">
+                                                        <i class="fa fa-image"></i> Open
+                                                    </a>
                                                 <?php endif; ?>
-                                            <?php else: ?>
-                                                Rejected: <?php echo h($row['rejected_at']); ?>
-                                            <?php endif; ?>
-                                            <?php if (!empty($row['admin_note'])): ?>
-                                                <br><br>Admin Note:<br><?php echo nl2br(h($row['admin_note'])); ?>
-                                            <?php endif; ?>
+                                            </div>
+                                            <div class="request-panel-body">
+                                                <?php if (!empty($row['screenshot_url'])): ?>
+                                                    <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank">
+                                                        <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="detail-screenshot">
+                                                    </a>
+                                                <?php else: ?>
+                                                    <div class="detail-box text-muted text-center mb-0">No screenshot uploaded.</div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
+                                        <?php if ($snapshotSummary !== ''): ?>
+                                            <div class="request-panel">
+                                                <div class="request-panel-head">
+                                                    <h6 class="request-panel-title mb-0">Payment Details Snapshot</h6>
+                                                </div>
+                                                <div class="request-panel-body">
+                                                    <div class="meta"><?php echo nl2br(h($snapshotSummary)); ?></div>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['note'])): ?>
+                                            <div class="request-panel">
+                                                <div class="request-panel-head">
+                                                    <h6 class="request-panel-title mb-0">User Note</h6>
+                                                </div>
+                                                <div class="request-panel-body">
+                                                    <div class="meta"><?php echo nl2br(h($row['note'])); ?></div>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
-                                <?php endif; ?>
+                                    <div class="request-main-panel">
+                                        <div class="request-top-summary">
+                                            <div class="request-stat-card">
+                                                <div class="request-stat-label">Status</div>
+                                                <div class="request-stat-value"><span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span></div>
+                                                <div class="request-stat-sub">Request #<?php echo intval($row['id']); ?></div>
+                                            </div>
+                                            <div class="request-stat-card">
+                                                <div class="request-stat-label">User</div>
+                                                <div class="request-stat-value">#<?php echo $userId; ?></div>
+                                                <div class="request-stat-sub"><?php echo h($row['username'] ?? 'Unknown'); ?><?php echo !empty($row['email']) ? ' | ' . h($row['email']) : ''; ?></div>
+                                            </div>
+                                            <div class="request-stat-card">
+                                                <div class="request-stat-label">Amount</div>
+                                                <div class="request-stat-value"><?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
+                                                <div class="request-stat-sub"><?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
+                                            </div>
+                                            <div class="request-stat-card">
+                                                <div class="request-stat-label">Live Subscription</div>
+                                                <div class="request-stat-value">
+                                                    <span class="request-live-status js-live-status-badge <?php echo $hasActiveMembership ? 'active' : 'inactive'; ?>">
+                                                        <?php echo $hasActiveMembership ? 'Subscription Active' : 'No Active Subscription'; ?>
+                                                    </span>
+                                                </div>
+                                                <div class="request-stat-sub js-live-primary-summary"><?php echo h($liveSummary); ?></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="request-panel">
+                                            <div class="request-panel-head">
+                                                <h6 class="request-panel-title mb-0">Request Overview</h6>
+                                            </div>
+                                            <div class="request-panel-body">
+                                                <div class="request-overview-grid">
+                                                    <div class="request-overview-item">
+                                                        <strong>Requested At</strong>
+                                                        <div><?php echo h($row['created_at']); ?></div>
+                                                    </div>
+                                                    <div class="request-overview-item">
+                                                        <strong>Invoice Number</strong>
+                                                        <div><?php echo h($row['invoice_no'] ?: 'Not generated yet'); ?></div>
+                                                    </div>
+                                                    <div class="request-overview-item">
+                                                        <strong>Selected Group In Request</strong>
+                                                        <div><?php echo h($row['group_name'] ?: 'Not selected yet'); ?></div>
+                                                    </div>
+                                                    <div class="request-overview-item">
+                                                        <strong>Method</strong>
+                                                        <div><?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="request-panel">
+                                            <div class="request-panel-head">
+                                                <h6 class="request-panel-title mb-0">Current Group Subscription Rows</h6>
+                                                <span class="meta">Live sync from group rows</span>
+                                            </div>
+                                            <div class="request-panel-body">
+                                                <div class="live-membership-list js-live-memberships">
+                                                    <?php if (!empty($memberships)): ?>
+                                                        <?php foreach ($memberships as $membership): ?>
+                                                            <div class="live-membership-item">
+                                                                <div class="live-membership-item-top">
+                                                                    <div class="live-membership-name"><?php echo h($membership['group_name'] ?? 'Group'); ?></div>
+                                                                    <span class="badge-soft badge-<?php echo intval($membership['is_active'] ?? 0) === 1 ? 'approved' : 'pending'; ?>">
+                                                                        <?php echo intval($membership['is_active'] ?? 0) === 1 ? 'ACTIVE' : 'EXPIRED'; ?>
+                                                                    </span>
+                                                                </div>
+                                                                <div class="live-membership-date"><?php echo h($membership['start_date'] ?: '-'); ?> to <?php echo h($membership['end_date'] ?: '-'); ?></div>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    <?php else: ?>
+                                                        <div class="detail-membership-line text-muted">No group subscription row exists yet for this user.</div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <?php if ($row['status'] === 'pending'): ?>
+                                            <div class="request-actions-grid">
+                                                <div class="request-panel">
+                                                    <div class="request-panel-head">
+                                                        <h6 class="request-panel-title mb-0">Assign Group Subscription</h6>
+                                                        <span class="meta">Same style as Add User to Group</span>
+                                                    </div>
+                                                    <div class="request-panel-body">
+                                                        <form method="post" action="subscription_request_action.php" class="subscription-approval-form" data-membership-meta="<?php echo h(json_encode($membershipMeta)); ?>">
+                                                            <input type="hidden" name="action" value="approve">
+                                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
+                                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
+                                                            <div class="request-form-grid">
+                                                                <div>
+                                                                    <label>Select Group</label>
+                                                                    <select class="form-control approval-group-select" name="group_id" required>
+                                                                        <option value="0">Select group</option>
+                                                                        <?php foreach ($groups as $group): ?>
+                                                                            <option value="<?php echo intval($group['id']); ?>" <?php echo $selectedGroupId === intval($group['id']) ? 'selected' : ''; ?>>
+                                                                                <?php echo h($group['group_name']); ?>
+                                                                            </option>
+                                                                        <?php endforeach; ?>
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label>Subscription End Date</label>
+                                                                    <input type="date" class="form-control" name="subscription_end_date" min="<?php echo date('Y-m-d'); ?>">
+                                                                    <small class="text-muted">Leave empty to add 31 days automatically from today or the active expiry date.</small>
+                                                                </div>
+                                                                <div class="request-form-span-2">
+                                                                    <div class="meta approve-state-text mb-2"></div>
+                                                                </div>
+                                                                <div class="request-form-span-2">
+                                                                    <label>Admin Note</label>
+                                                                    <textarea class="form-control mb-3" name="admin_note" rows="3" placeholder="Optional note for approval"></textarea>
+                                                                </div>
+                                                                <div class="request-form-span-2">
+                                                                    <button class="sub-btn sub-btn-primary approve-action-btn" type="submit" <?php echo empty($groups) ? 'disabled' : ''; ?>>
+                                                                        <i class="fa fa-check"></i> Assign Subscription
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                <div class="request-panel request-reject-box">
+                                                    <div class="request-panel-head">
+                                                        <h6 class="request-panel-title mb-0">Reject With Note</h6>
+                                                    </div>
+                                                    <div class="request-panel-body">
+                                                        <form method="post" action="subscription_request_action.php">
+                                                            <input type="hidden" name="action" value="reject">
+                                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
+                                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
+                                                            <label>Reject Note</label>
+                                                            <textarea class="form-control mb-3" name="admin_note" rows="6" placeholder="Write why this request is rejected" required></textarea>
+                                                            <button class="sub-btn sub-btn-danger" type="submit">
+                                                                <i class="fa fa-times"></i> Reject Request
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="request-panel">
+                                                <div class="request-panel-head">
+                                                    <h6 class="request-panel-title mb-0">Subscription Result</h6>
+                                                </div>
+                                                <div class="request-panel-body">
+                                                    <div class="meta">
+                                                        <?php if ($row['status'] === 'approved'): ?>
+                                                            Approved: <?php echo h($row['approved_at']); ?><br>
+                                                            Invoice Subscription: <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?><br>
+                                                            Months Added: <?php echo intval($row['months_added']); ?><br>
+                                                            Approved By: <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?><br>
+                                                            <?php if ($primaryMembership): ?>
+                                                                Live Group Row: <?php echo h($primaryMembership['group_name'] ?? 'Group'); ?> | <?php echo h($primaryMembership['start_date'] ?: '-'); ?> to <?php echo h($primaryMembership['end_date'] ?: '-'); ?>
+                                                            <?php endif; ?>
+                                                        <?php else: ?>
+                                                            Rejected: <?php echo h($row['rejected_at']); ?><br>
+                                                            Live Status: <span class="js-live-primary-summary"><?php echo h($liveSummary); ?></span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($row['admin_note'])): ?>
+                                                            <br><br>Admin Note:<br><?php echo nl2br(h($row['admin_note'])); ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -808,7 +1101,7 @@ if (!empty($requestUserIds)) {
 </div>
 
 <div class="modal fade" id="invoiceDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+    <div class="modal-dialog modal-dialog-scrollable subscription-detail-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Invoice Details</h5>
@@ -826,6 +1119,133 @@ if (!empty($requestUserIds)) {
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
 <script>
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function renderLiveMembershipRows(memberships) {
+    if (!Array.isArray(memberships) || memberships.length === 0) {
+        return '<div class="detail-membership-line text-muted">No group subscription row exists yet for this user.</div>';
+    }
+
+    return memberships.map(function (membership) {
+        var isActive = Number(membership.is_active || 0) === 1;
+        return '' +
+            '<div class="live-membership-item">' +
+                '<div class="live-membership-item-top">' +
+                    '<div class="live-membership-name">' + escapeHtml(membership.group_name || 'Group') + '</div>' +
+                    '<span class="badge-soft badge-' + (isActive ? 'approved' : 'pending') + '">' + (isActive ? 'ACTIVE' : 'EXPIRED') + '</span>' +
+                '</div>' +
+                '<div class="live-membership-date">' + escapeHtml(membership.start_date || '-') + ' to ' + escapeHtml(membership.end_date || '-') + '</div>' +
+            '</div>';
+    }).join('');
+}
+
+function buildLiveSummary(memberships) {
+    if (!Array.isArray(memberships) || memberships.length === 0) {
+        return 'No group row yet';
+    }
+
+    var firstMembership = memberships[0];
+    var statusText = Number(firstMembership.is_active || 0) === 1 ? 'Active' : 'Expired';
+    return (firstMembership.group_name || 'Group') + ' | ' + (firstMembership.end_date || '-') + ' | ' + statusText;
+}
+
+function updateLiveStatusUI(container, memberships) {
+    if (!container) {
+        return;
+    }
+
+    var hasActiveMembership = Array.isArray(memberships) && memberships.some(function (membership) {
+        return Number(membership.is_active || 0) === 1;
+    });
+    var summary = buildLiveSummary(memberships);
+
+    container.querySelectorAll('.js-live-memberships').forEach(function (node) {
+        node.innerHTML = renderLiveMembershipRows(memberships);
+    });
+
+    container.querySelectorAll('.js-live-primary-summary').forEach(function (node) {
+        node.textContent = summary;
+    });
+
+    container.querySelectorAll('.js-live-status-badge').forEach(function (node) {
+        node.textContent = hasActiveMembership ? 'Subscription Active' : 'No Active Subscription';
+        node.classList.remove('active', 'inactive');
+        node.classList.add(hasActiveMembership ? 'active' : 'inactive');
+    });
+}
+
+function updateInvoiceRowLiveState(requestId, memberships) {
+    var row = document.querySelector('.invoice-row[data-request-id="' + requestId + '"]');
+    if (!row) {
+        return;
+    }
+
+    var summary = buildLiveSummary(memberships);
+    var hasActiveMembership = Array.isArray(memberships) && memberships.some(function (membership) {
+        return Number(membership.is_active || 0) === 1;
+    });
+    var summaryNode = row.querySelector('.js-live-row-summary');
+    var badgeNode = row.querySelector('.js-live-row-badge');
+
+    if (summaryNode) {
+        summaryNode.textContent = summary;
+    }
+    if (badgeNode) {
+        badgeNode.textContent = hasActiveMembership ? 'Subscription Active' : 'No Active Subscription';
+        badgeNode.classList.remove('active', 'inactive');
+        badgeNode.classList.add(hasActiveMembership ? 'active' : 'inactive');
+    }
+}
+
+function refreshRequestLiveData(modal, userId, requestId) {
+    if (!modal || !userId) {
+        return;
+    }
+
+    fetch('get_subscription_overview.php?user_id=' + encodeURIComponent(userId), {
+        credentials: 'same-origin'
+    })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (payload) {
+            if (!payload || payload.status !== true) {
+                return;
+            }
+
+            var memberships = Array.isArray(payload.current_subscriptions) ? payload.current_subscriptions : [];
+            updateLiveStatusUI(modal, memberships);
+            updateInvoiceRowLiveState(requestId, memberships);
+
+            var approvalForm = modal.querySelector('.subscription-approval-form');
+            if (approvalForm) {
+                approvalForm.dataset.membershipMeta = JSON.stringify(memberships.map(function (membership) {
+                    return {
+                        group_id: Number(membership.group_id || 0),
+                        group_name: membership.group_name || 'Group',
+                        start_date: membership.start_date || '',
+                        end_date: membership.end_date || '',
+                        is_active: Number(membership.is_active || 0)
+                    };
+                }));
+
+                var select = approvalForm.querySelector('.approval-group-select');
+                if (select) {
+                    select.dispatchEvent(new Event('change'));
+                }
+            }
+        })
+        .catch(function () {
+        });
+}
+
 function initializeApprovalForms(scope) {
     (scope || document).querySelectorAll('.subscription-approval-form').forEach(function (form) {
         if (form.dataset.initialized === '1') {
@@ -836,18 +1256,18 @@ function initializeApprovalForms(scope) {
         var select = form.querySelector('.approval-group-select');
         var button = form.querySelector('.approve-action-btn');
         var stateText = form.querySelector('.approve-state-text');
-        var membershipMeta = [];
-
-        try {
-            membershipMeta = JSON.parse(form.dataset.membershipMeta || '[]');
-        } catch (error) {
-            membershipMeta = [];
-        }
 
         function syncApprovalState() {
+            var membershipMeta = [];
             var selectedGroupId = select ? select.value : '0';
             if (!button || !stateText) {
                 return;
+            }
+
+            try {
+                membershipMeta = JSON.parse(form.dataset.membershipMeta || '[]');
+            } catch (error) {
+                membershipMeta = [];
             }
 
             if (!selectedGroupId || selectedGroupId === '0') {
@@ -864,10 +1284,10 @@ function initializeApprovalForms(scope) {
             button.disabled = false;
             if (selectedMembership) {
                 button.innerHTML = '<i class="fa fa-plus-circle"></i> Increase Date + Approve';
-                stateText.textContent = 'User is already in ' + selectedMembership.group_name + '. Approval will increase the date on the same group subscription row.';
+                stateText.textContent = 'User is already in ' + selectedMembership.group_name + '. Approval will increase the date on the same subscription row unless you choose a custom end date.';
             } else {
                 button.innerHTML = '<i class="fa fa-user-plus"></i> Add To Group + Approve';
-                stateText.textContent = 'User is not in this group yet. Approval will first add the user to the chosen group, then start the one-month subscription.';
+                stateText.textContent = 'User is not in this group yet. Approval will add the user to this group and assign the selected subscription date.';
             }
         }
 
@@ -905,6 +1325,7 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.querySelector('.modal-title').textContent = button.dataset.title || 'Invoice Details';
             modal.querySelector('.modal-body').innerHTML = template.innerHTML;
             initializeApprovalForms(modal);
+            refreshRequestLiveData(modal, button.dataset.userId, button.dataset.requestId);
             if (window.jQuery) {
                 window.jQuery(modal).modal('show');
             }

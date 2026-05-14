@@ -42,6 +42,7 @@ $action = trim($_POST['action'] ?? '');
 $requestId = intval($_POST['request_id'] ?? 0);
 $adminNote = trim($_POST['admin_note'] ?? '');
 $adminId = intval($_SESSION['admin_id']);
+$customEndDateRaw = trim($_POST['subscription_end_date'] ?? '');
 
 if ($requestId <= 0) {
     subscription_flash('danger', 'Invalid subscription request.');
@@ -49,6 +50,11 @@ if ($requestId <= 0) {
 }
 
 if ($action === 'reject') {
+    if ($adminNote === '') {
+        subscription_flash('danger', 'Please write a reject note before rejecting the request.');
+        subscription_redirect();
+    }
+
     $stmt = $conn->prepare("
         UPDATE subscription_requests
         SET status = 'rejected',
@@ -72,10 +78,19 @@ if ($action !== 'approve') {
 }
 
 $selectedGroupId = intval($_POST['group_id'] ?? 0);
+$customEndDate = null;
 
 if ($selectedGroupId <= 0) {
     subscription_flash('danger', 'Please select a subscription group before approving.');
     subscription_redirect();
+}
+
+if ($customEndDateRaw !== '') {
+    $customEndDate = DateTime::createFromFormat('Y-m-d', $customEndDateRaw);
+    if (!$customEndDate || $customEndDate->format('Y-m-d') !== $customEndDateRaw) {
+        subscription_flash('danger', 'Selected subscription end date is invalid.');
+        subscription_redirect();
+    }
 }
 
 $groupCheckStmt = $conn->prepare("SELECT id FROM `groups` WHERE id = ? LIMIT 1");
@@ -131,8 +146,20 @@ try {
         }
     }
 
-    $subscriptionEnd = clone $subscriptionStart;
-    $subscriptionEnd->modify('+31 days');
+    if ($customEndDate instanceof DateTime) {
+        if ($member && !empty($member['end_date'])) {
+            $currentEndDate = new DateTime($member['end_date']);
+            if ($currentEndDate >= $today && $customEndDate <= $currentEndDate) {
+                throw new Exception('Selected end date must be later than the current active end date for this group.');
+            }
+        } elseif ($customEndDate <= $today) {
+            throw new Exception('Selected end date must be later than today.');
+        }
+        $subscriptionEnd = clone $customEndDate;
+    } else {
+        $subscriptionEnd = clone $subscriptionStart;
+        $subscriptionEnd->modify('+31 days');
+    }
 
     if ($member) {
         $newEndDate = $subscriptionEnd->format('Y-m-d');

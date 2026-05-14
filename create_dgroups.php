@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+include "subscription_schema.php";
 session_start();
 
 // Enable error reporting for debugging
@@ -65,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user_to_group'])) 
 
     // Use start_date from POST or default to today
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : date('Y-m-d');
-    // Use end_date from POST or default to 30 days after start_date
-    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : date('Y-m-d', strtotime($start_date . ' +30 days'));
+    // Use end_date from POST or default to 31 days after start_date
+    $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : date('Y-m-d', strtotime($start_date . ' +31 days'));
     $created_at = date('Y-m-d H:i:s'); // Keep the current timestamp
 
     if ($group_id > 0 && $user_id > 0) {
@@ -89,6 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_user_to_group'])) 
             }
             $stmt->bind_param("iisisss", $group_id, $user_id, $comment, $subscription, $start_date, $end_date, $created_at);
             if ($stmt->execute()) {
+                $settings = get_subscription_settings($conn);
+                subscription_create_approved_invoice_record($conn, [
+                    'user_id' => $user_id,
+                    'group_id' => $group_id,
+                    'amount' => $settings['monthly_amount'] ?? '0.00',
+                    'currency' => $settings['currency'] ?? 'PKR',
+                    'payment_method' => 'Admin Assignment',
+                    'note' => $comment,
+                    'admin_note' => 'User added to group manually from direct group management.',
+                    'details_snapshot' => subscription_build_details_snapshot($settings),
+                    'subscription_start_date' => $start_date,
+                    'subscription_end_date' => $end_date,
+                    'approved_by' => intval($_SESSION['admin_id'] ?? 0)
+                ]);
                 echo "User added to group successfully.";
             } else {
                 echo "Error adding user to group: " . $stmt->error;

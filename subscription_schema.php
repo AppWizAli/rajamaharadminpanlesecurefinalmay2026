@@ -231,6 +231,121 @@ function get_subscription_settings($conn) {
     ];
 }
 
+function subscription_build_details_snapshot($settings) {
+    $snapshot = [
+        'monthly_amount' => $settings['monthly_amount'] ?? '0',
+        'currency' => $settings['currency'] ?? 'PKR',
+        'jazzcash_number' => $settings['jazzcash_number'] ?? '',
+        'jazzcash_title' => $settings['jazzcash_title'] ?? '',
+        'easypaisa_number' => $settings['easypaisa_number'] ?? '',
+        'easypaisa_title' => $settings['easypaisa_title'] ?? '',
+        'bank_name' => $settings['bank_name'] ?? '',
+        'bank_account_title' => $settings['bank_account_title'] ?? '',
+        'bank_account_number' => $settings['bank_account_number'] ?? '',
+        'bank_iban' => $settings['bank_iban'] ?? '',
+        'payment_instructions' => $settings['payment_instructions'] ?? ''
+    ];
+
+    return json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
+function subscription_generate_invoice_number($prefix = 'UB-INV') {
+    return $prefix . '-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(2)));
+}
+
+function subscription_create_approved_invoice_record($conn, $payload) {
+    $userId = intval($payload['user_id'] ?? 0);
+    $groupId = intval($payload['group_id'] ?? 0);
+    $approvedBy = intval($payload['approved_by'] ?? 0);
+    $amount = (string)($payload['amount'] ?? '0.00');
+    $currency = trim((string)($payload['currency'] ?? 'PKR'));
+    $paymentMethod = trim((string)($payload['payment_method'] ?? 'Admin Assignment'));
+    $screenshotUrl = trim((string)($payload['screenshot_url'] ?? ''));
+    $userNote = trim((string)($payload['note'] ?? ''));
+    $adminNote = trim((string)($payload['admin_note'] ?? ''));
+    $detailsSnapshot = (string)($payload['details_snapshot'] ?? '');
+    $invoiceNo = trim((string)($payload['invoice_no'] ?? ''));
+    $monthsAdded = max(1, intval($payload['months_added'] ?? 1));
+    $subscriptionStartDate = trim((string)($payload['subscription_start_date'] ?? ''));
+    $subscriptionEndDate = trim((string)($payload['subscription_end_date'] ?? ''));
+
+    if ($userId <= 0 || $groupId <= 0 || $subscriptionStartDate === '' || $subscriptionEndDate === '') {
+        return [
+            'status' => false,
+            'message' => 'Invoice payload is incomplete.'
+        ];
+    }
+
+    if ($currency === '') {
+        $currency = 'PKR';
+    }
+    if ($invoiceNo === '') {
+        $invoiceNo = subscription_generate_invoice_number();
+    }
+
+    $stmt = $conn->prepare("
+        INSERT INTO subscription_requests (
+            user_id,
+            group_id,
+            amount,
+            currency,
+            payment_method,
+            screenshot_url,
+            note,
+            details_snapshot,
+            status,
+            admin_note,
+            invoice_no,
+            months_added,
+            subscription_start_date,
+            subscription_end_date,
+            approved_by,
+            approved_at,
+            created_at,
+            updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())
+    ");
+
+    if (!$stmt) {
+        return [
+            'status' => false,
+            'message' => $conn->error
+        ];
+    }
+
+    $screenshotValue = $screenshotUrl !== '' ? $screenshotUrl : null;
+    $approvedByValue = $approvedBy > 0 ? $approvedBy : null;
+    $stmt->bind_param(
+        "iissssssssissi",
+        $userId,
+        $groupId,
+        $amount,
+        $currency,
+        $paymentMethod,
+        $screenshotValue,
+        $userNote,
+        $detailsSnapshot,
+        $adminNote,
+        $invoiceNo,
+        $monthsAdded,
+        $subscriptionStartDate,
+        $subscriptionEndDate,
+        $approvedByValue
+    );
+
+    $status = $stmt->execute();
+    $insertId = $stmt->insert_id;
+    $message = $status ? '' : $stmt->error;
+    $stmt->close();
+
+    return [
+        'status' => $status,
+        'id' => $insertId,
+        'invoice_no' => $invoiceNo,
+        'message' => $message
+    ];
+}
+
 function subscription_build_public_url($relativePath) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';

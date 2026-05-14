@@ -64,6 +64,7 @@ $historyStmt = $conn->prepare("
         sr.payment_method,
         sr.screenshot_url,
         sr.note,
+        sr.details_snapshot,
         sr.status,
         sr.admin_note,
         sr.invoice_no,
