@@ -71,11 +71,7 @@ if ($action !== 'approve') {
     subscription_redirect();
 }
 
-$settings = get_subscription_settings($conn);
 $selectedGroupId = intval($_POST['group_id'] ?? 0);
-if ($selectedGroupId <= 0) {
-    $selectedGroupId = intval($settings['default_group_id'] ?? 0);
-}
 
 if ($selectedGroupId <= 0) {
     subscription_flash('danger', 'Please select a subscription group before approving.');

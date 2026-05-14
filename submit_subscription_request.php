@@ -137,7 +137,7 @@ $stmt = $conn->prepare("
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, ?, ?)
 ");
 $prepareError = $stmt ? '' : $conn->error;
-$defaultGroupId = !empty($settings['default_group_id']) ? intval($settings['default_group_id']) : null;
+$requestGroupId = null;
 $amount = floatval($settings['monthly_amount'] ?? 0);
 $currency = trim($settings['currency'] ?? 'PKR');
 $createdAt = date('Y-m-d H:i:s');
@@ -145,7 +145,7 @@ if ($stmt) {
     $stmt->bind_param(
         "iidsssssss",
         $userId,
-        $defaultGroupId,
+        $requestGroupId,
         $amount,
         $currency,
         $paymentMethod,

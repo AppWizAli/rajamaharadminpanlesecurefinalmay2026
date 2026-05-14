@@ -14,6 +14,15 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function bind_dynamic_params($stmt, $types, $values) {
+    $refs = [];
+    foreach ($values as $key => $value) {
+        $refs[$key] = &$values[$key];
+    }
+    array_unshift($refs, $types);
+    return call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
 function parse_subscription_snapshot($rawValue) {
     if (!is_string($rawValue) || trim($rawValue) === '') {
         return [];
@@ -67,7 +76,6 @@ function current_request_url() {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_settings') {
     $monthlyAmount = max(0, floatval($_POST['monthly_amount'] ?? 0));
     $currency = trim($_POST['currency'] ?? 'PKR');
-    $defaultGroupId = intval($_POST['default_group_id'] ?? 0);
     $jazzcashNumber = trim($_POST['jazzcash_number'] ?? '');
     $jazzcashTitle = trim($_POST['jazzcash_title'] ?? '');
     $easypaisaNumber = trim($_POST['easypaisa_number'] ?? '');
@@ -79,9 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     $paymentInstructions = trim($_POST['payment_instructions'] ?? '');
     $adminId = intval($_SESSION['admin_id']);
 
-    if ($defaultGroupId <= 0) {
-        $defaultGroupId = null;
-    }
     if ($currency === '') {
         $currency = 'PKR';
     }
@@ -90,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         UPDATE subscription_settings
         SET monthly_amount = ?,
             currency = ?,
-            default_group_id = ?,
             jazzcash_number = ?,
             jazzcash_title = ?,
             easypaisa_number = ?,
@@ -104,12 +108,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             updated_at = NOW()
         WHERE id = 1
     ");
+
     if ($stmt) {
         $stmt->bind_param(
-            "dsisssssssssi",
+            "dssssssssssi",
             $monthlyAmount,
             $currency,
-            $defaultGroupId,
             $jazzcashNumber,
             $jazzcashTitle,
             $easypaisaNumber,
@@ -125,12 +129,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
         $stmt->close();
         $_SESSION['subscription_flash'] = [
             'type' => 'success',
-            'message' => 'Subscription settings updated successfully.'
+            'message' => 'Payment account settings updated successfully.'
         ];
     } else {
         $_SESSION['subscription_flash'] = [
             'type' => 'danger',
-            'message' => 'Unable to save subscription settings: ' . $conn->error
+            'message' => 'Unable to save payment account settings: ' . $conn->error
         ];
     }
 
@@ -201,26 +205,81 @@ $requestsSql = "
     $whereSql
     ORDER BY CASE sr.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, sr.created_at DESC, sr.id DESC
 ";
+
+$requestRows = [];
 $requestsStmt = $conn->prepare($requestsSql);
 if ($requestsStmt && !empty($params)) {
-    $requestsStmt->bind_param($types, ...$params);
+    bind_dynamic_params($requestsStmt, $types, $params);
 }
-$requestsResult = false;
 if ($requestsStmt) {
     $requestsStmt->execute();
     $requestsResult = $requestsStmt->get_result();
+    while ($requestsResult && $row = $requestsResult->fetch_assoc()) {
+        $requestRows[] = $row;
+    }
 } elseif (empty($flash['message'])) {
     $flash = [
         'type' => 'danger',
         'message' => 'Unable to load subscription requests: ' . $conn->error
     ];
 }
+
+$membershipsByUser = [];
+$primaryMembershipByUser = [];
+$requestUserIds = [];
+foreach ($requestRows as $row) {
+    $userId = intval($row['user_id'] ?? 0);
+    if ($userId > 0) {
+        $requestUserIds[$userId] = $userId;
+    }
+}
+
+if (!empty($requestUserIds)) {
+    $membershipSql = "
+        SELECT
+            gm.user_id,
+            gm.group_id,
+            gm.start_date,
+            gm.end_date,
+            gm.updated_at,
+            g.group_name,
+            CASE WHEN gm.end_date IS NOT NULL AND gm.end_date >= CURDATE() THEN 1 ELSE 0 END AS is_active
+        FROM group_members gm
+        LEFT JOIN `groups` g ON g.id = gm.group_id
+        WHERE gm.user_id IN (" . implode(',', array_fill(0, count($requestUserIds), '?')) . ")
+        ORDER BY gm.user_id ASC, CASE WHEN gm.end_date IS NULL THEN 1 ELSE 0 END ASC, gm.end_date DESC, gm.group_id DESC
+    ";
+
+    $membershipStmt = $conn->prepare($membershipSql);
+    if ($membershipStmt) {
+        $membershipIds = array_values($requestUserIds);
+        bind_dynamic_params($membershipStmt, str_repeat('i', count($membershipIds)), $membershipIds);
+        $membershipStmt->execute();
+        $membershipResult = $membershipStmt->get_result();
+        while ($membershipResult && $membership = $membershipResult->fetch_assoc()) {
+            $userId = intval($membership['user_id']);
+            if (!isset($membershipsByUser[$userId])) {
+                $membershipsByUser[$userId] = [];
+            }
+            $membershipsByUser[$userId][] = $membership;
+            if (!isset($primaryMembershipByUser[$userId])) {
+                $primaryMembershipByUser[$userId] = $membership;
+            }
+        }
+        $membershipStmt->close();
+    } elseif (empty($flash['message'])) {
+        $flash = [
+            'type' => 'danger',
+            'message' => 'Unable to load group subscription rows: ' . $conn->error
+        ];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Subscription Requests</title>
+    <title>Subscriptions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="apple-touch-icon" sizes="180x180" href="vendors/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="vendors/images/favicon-32x32.png">
@@ -245,6 +304,12 @@ if ($requestsStmt) {
         .filters-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 10px; }
         .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 12px; }
         .request-image { width: 110px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #e5e7eb; }
+        .section-note { color: #667085; font-size: 13px; }
+        .membership-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-top: 10px; }
+        .membership-line { font-size: 12px; color: #344054; margin-bottom: 6px; }
+        .membership-line:last-child { margin-bottom: 0; }
+        .approval-actions { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
+        .approve-state-text { min-height: 18px; }
         @media (max-width: 768px) {
             .filters-grid, .settings-grid { grid-template-columns: 1fr; }
         }
@@ -260,7 +325,7 @@ if ($requestsStmt) {
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="page-title">
                         <h4 class="mb-0">Subscriptions</h4>
-                        <small>Manage payment account details, review screenshots, and manually approve one-month subscriptions.</small>
+                        <small>Keep payment account details separate, and manage every invoice/request with the same group subscription rows used everywhere else.</small>
                     </div>
                 </div>
             </div>
@@ -276,7 +341,8 @@ if ($requestsStmt) {
         <?php endif; ?>
 
         <div class="pd-20 card-box subscription-card mb-30">
-            <h5 class="mb-3">Subscription Settings</h5>
+            <h5 class="mb-1">Payment Account Settings</h5>
+            <div class="section-note mb-3">Only payment amount and account details belong here. Group choice is handled on each invoice/request row below.</div>
             <form method="post">
                 <input type="hidden" name="action" value="save_settings">
                 <div class="settings-grid">
@@ -287,17 +353,6 @@ if ($requestsStmt) {
                     <div>
                         <label>Currency</label>
                         <input class="form-control" name="currency" value="<?php echo h($settings['currency']); ?>">
-                    </div>
-                    <div>
-                        <label>Default Group</label>
-                        <select class="form-control" name="default_group_id">
-                            <option value="0">Select group</option>
-                            <?php foreach ($groups as $group): ?>
-                                <option value="<?php echo intval($group['id']); ?>" <?php echo intval($settings['default_group_id']) === intval($group['id']) ? 'selected' : ''; ?>>
-                                    <?php echo h($group['group_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
                     </div>
                     <div>
                         <label>JazzCash Number</label>
@@ -337,12 +392,14 @@ if ($requestsStmt) {
                     <textarea class="form-control" name="payment_instructions" rows="4"><?php echo h($settings['payment_instructions']); ?></textarea>
                 </div>
                 <button class="btn btn-primary mt-3" type="submit">
-                    <i class="fa fa-save"></i> Save Settings
+                    <i class="fa fa-save"></i> Save Payment Details
                 </button>
             </form>
         </div>
 
         <div class="pd-20 card-box subscription-card mb-30">
+            <h5 class="mb-1">Invoices & Subscription Management</h5>
+            <div class="section-note mb-3">See sent invoices, current group subscription rows, and approve by either adding to group or increasing the existing date from the same row.</div>
             <form method="get">
                 <div class="filters-grid">
                     <input class="form-control" name="q" placeholder="User, email, invoice, method" value="<?php echo h($filters['q']); ?>">
@@ -354,16 +411,35 @@ if ($requestsStmt) {
                     </select>
                 </div>
                 <button class="btn btn-outline-primary mt-3" type="submit">
-                    <i class="fa fa-filter"></i> Filter Requests
+                    <i class="fa fa-filter"></i> Filter
                 </button>
             </form>
         </div>
 
         <div class="pd-20 card-box subscription-card mb-30">
-            <h5 class="mb-3">Subscription Requests</h5>
-            <?php if ($requestsResult && $requestsResult->num_rows > 0): ?>
-                <?php while ($row = $requestsResult->fetch_assoc()): ?>
-                    <?php $statusClass = in_array($row['status'], ['pending', 'approved', 'rejected'], true) ? $row['status'] : 'pending'; ?>
+            <h5 class="mb-3">Sent Invoices & Requests</h5>
+            <?php if (!empty($requestRows)): ?>
+                <?php foreach ($requestRows as $row): ?>
+                    <?php
+                    $statusClass = in_array($row['status'], ['pending', 'approved', 'rejected'], true) ? $row['status'] : 'pending';
+                    $userId = intval($row['user_id']);
+                    $memberships = $membershipsByUser[$userId] ?? [];
+                    $primaryMembership = $primaryMembershipByUser[$userId] ?? null;
+                    $selectedGroupId = intval($row['group_id'] ?? 0);
+                    if ($selectedGroupId <= 0 && $primaryMembership) {
+                        $selectedGroupId = intval($primaryMembership['group_id']);
+                    }
+                    $membershipMeta = [];
+                    foreach ($memberships as $membership) {
+                        $membershipMeta[] = [
+                            'group_id' => intval($membership['group_id']),
+                            'group_name' => $membership['group_name'] ?? 'Group',
+                            'start_date' => $membership['start_date'] ?? '',
+                            'end_date' => $membership['end_date'] ?? '',
+                            'is_active' => intval($membership['is_active'] ?? 0)
+                        ];
+                    }
+                    ?>
                     <div class="request-card <?php echo h($statusClass); ?>">
                         <div class="row">
                             <div class="col-md-2 mb-3">
@@ -380,13 +456,13 @@ if ($requestsStmt) {
                                     <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
                                     <strong>#<?php echo intval($row['id']); ?></strong>
                                 </div>
-                                <div><strong>User:</strong> #<?php echo intval($row['user_id']); ?> <?php echo h($row['username'] ?? 'Unknown'); ?></div>
+                                <div><strong>User:</strong> #<?php echo $userId; ?> <?php echo h($row['username'] ?? 'Unknown'); ?></div>
                                 <div class="meta"><?php echo h($row['email'] ?? ''); ?></div>
                                 <div class="mt-2"><strong>Amount:</strong> <?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
                                 <div><strong>Method:</strong> <?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
                                 <div><strong>Requested:</strong> <?php echo h($row['created_at']); ?></div>
                                 <div><strong>Invoice:</strong> <?php echo h($row['invoice_no'] ?: 'Not generated yet'); ?></div>
-                                <div><strong>Group:</strong> <?php echo h($row['group_name'] ?: ($settings['default_group_name'] ?: 'Not selected')); ?></div>
+                                <div><strong>Selected Group:</strong> <?php echo h($row['group_name'] ?: 'Not selected yet'); ?></div>
                                 <?php $snapshotSummary = render_snapshot_summary($row['details_snapshot'] ?? ''); ?>
                                 <?php if ($snapshotSummary !== ''): ?>
                                     <div class="meta mt-2"><strong>Payment Details Snapshot:</strong><br><?php echo nl2br(h($snapshotSummary)); ?></div>
@@ -394,27 +470,44 @@ if ($requestsStmt) {
                                 <?php if (!empty($row['note'])): ?>
                                     <div class="meta mt-2"><strong>User Note:</strong><br><?php echo nl2br(h($row['note'])); ?></div>
                                 <?php endif; ?>
+
+                                <div class="membership-box">
+                                    <strong class="d-block mb-2">Current Group Subscription Rows</strong>
+                                    <?php if (!empty($memberships)): ?>
+                                        <?php foreach ($memberships as $membership): ?>
+                                            <div class="membership-line">
+                                                <?php echo h($membership['group_name'] ?? 'Group'); ?>
+                                                |
+                                                <?php echo h($membership['start_date'] ?: '-'); ?> to <?php echo h($membership['end_date'] ?: '-'); ?>
+                                                |
+                                                <?php echo intval($membership['is_active'] ?? 0) === 1 ? 'Active' : 'Expired'; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="membership-line">No group subscription row exists yet for this user.</div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <div class="col-md-5">
                                 <?php if ($row['status'] === 'pending'): ?>
-                                    <form method="post" action="subscription_request_action.php" class="mb-3">
+                                    <form method="post" action="subscription_request_action.php" class="subscription-approval-form approval-actions mb-3" data-membership-meta="<?php echo h(json_encode($membershipMeta)); ?>">
                                         <input type="hidden" name="action" value="approve">
                                         <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
                                         <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
-                                        <label>Approve Into Group</label>
-                                        <select class="form-control mb-2" name="group_id">
+                                        <label>Target Group For This Invoice</label>
+                                        <select class="form-control mb-2 approval-group-select" name="group_id">
                                             <option value="0">Select group</option>
                                             <?php foreach ($groups as $group): ?>
-                                                <?php $selected = intval($row['group_id']) === intval($group['id']) || (empty($row['group_id']) && intval($settings['default_group_id']) === intval($group['id'])); ?>
-                                                <option value="<?php echo intval($group['id']); ?>" <?php echo $selected ? 'selected' : ''; ?>>
+                                                <option value="<?php echo intval($group['id']); ?>" <?php echo $selectedGroupId === intval($group['id']) ? 'selected' : ''; ?>>
                                                     <?php echo h($group['group_name']); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <div class="meta approve-state-text mb-2"></div>
                                         <label>Admin Note</label>
                                         <textarea class="form-control mb-2" name="admin_note" rows="3" placeholder="Optional note for approval"></textarea>
-                                        <button class="btn btn-success" type="submit">
-                                            <i class="fa fa-check"></i> Approve + Add 1 Month
+                                        <button class="btn btn-success approve-action-btn" type="submit" <?php echo empty($groups) ? 'disabled' : ''; ?>>
+                                            <i class="fa fa-check"></i> Approve Subscription
                                         </button>
                                     </form>
 
@@ -429,14 +522,17 @@ if ($requestsStmt) {
                                         </button>
                                     </form>
                                 <?php else: ?>
-                                    <div class="meta">
+                                    <div class="approval-actions meta">
                                         <?php if ($row['status'] === 'approved'): ?>
-                                            Approved: <?php echo h($row['approved_at']); ?><br>
-                                            Subscription: <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?><br>
-                                            Months Added: <?php echo intval($row['months_added']); ?><br>
-                                            Approved By: <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?><br>
+                                            <div><strong>Approved:</strong> <?php echo h($row['approved_at']); ?></div>
+                                            <div><strong>Invoice Subscription:</strong> <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?></div>
+                                            <div><strong>Months Added:</strong> <?php echo intval($row['months_added']); ?></div>
+                                            <div><strong>Approved By:</strong> <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?></div>
+                                            <?php if ($primaryMembership): ?>
+                                                <div class="mt-2"><strong>Live Group Row:</strong> <?php echo h($primaryMembership['group_name'] ?? 'Group'); ?> | <?php echo h($primaryMembership['start_date'] ?: '-'); ?> to <?php echo h($primaryMembership['end_date'] ?: '-'); ?></div>
+                                            <?php endif; ?>
                                         <?php else: ?>
-                                            Rejected: <?php echo h($row['rejected_at']); ?><br>
+                                            <div><strong>Rejected:</strong> <?php echo h($row['rejected_at']); ?></div>
                                         <?php endif; ?>
                                         <?php if (!empty($row['admin_note'])): ?>
                                             <div class="mt-2"><strong>Admin Note:</strong><br><?php echo nl2br(h($row['admin_note'])); ?></div>
@@ -446,7 +542,7 @@ if ($requestsStmt) {
                             </div>
                         </div>
                     </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <div class="text-muted">No subscription requests found.</div>
             <?php endif; ?>
@@ -457,6 +553,54 @@ if ($requestsStmt) {
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.subscription-approval-form').forEach(function (form) {
+        var select = form.querySelector('.approval-group-select');
+        var button = form.querySelector('.approve-action-btn');
+        var stateText = form.querySelector('.approve-state-text');
+        var membershipMeta = [];
+
+        try {
+            membershipMeta = JSON.parse(form.dataset.membershipMeta || '[]');
+        } catch (error) {
+            membershipMeta = [];
+        }
+
+        function syncApprovalState() {
+            var selectedGroupId = select ? select.value : '0';
+            if (!button || !stateText) {
+                return;
+            }
+
+            if (!selectedGroupId || selectedGroupId === '0') {
+                button.disabled = true;
+                button.innerHTML = '<i class="fa fa-check"></i> Select Group First';
+                stateText.textContent = 'Choose the target group on this same row before approving the invoice.';
+                return;
+            }
+
+            var selectedMembership = membershipMeta.find(function (item) {
+                return String(item.group_id) === String(selectedGroupId);
+            });
+
+            button.disabled = false;
+            if (selectedMembership) {
+                button.innerHTML = '<i class="fa fa-plus-circle"></i> Increase Date + Approve';
+                stateText.textContent = 'User is already in ' + selectedMembership.group_name + '. Approval will increase the date on that same group_members row.';
+            } else {
+                button.innerHTML = '<i class="fa fa-user-plus"></i> Add To Group + Approve';
+                stateText.textContent = 'User is not in this group yet. Approval will first add the user to that group and then create the one-month subscription row.';
+            }
+        }
+
+        if (select) {
+            select.addEventListener('change', syncApprovalState);
+            syncApprovalState();
+        }
+    });
+});
+</script>
 </body>
 </html>
 <?php
