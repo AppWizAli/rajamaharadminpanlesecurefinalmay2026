@@ -11,7 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-ensure_subscription_tables($conn);
+$schemaStatus = ensure_subscription_tables($conn);
+if (!empty($schemaStatus['message'])) {
+    echo json_encode(["status" => false, "message" => "Subscription setup issue: " . $schemaStatus['message']]);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(["status" => false, "message" => "Invalid request method."]);
@@ -129,25 +133,31 @@ $detailsSnapshot = json_encode([
 
 $stmt = $conn->prepare("
     INSERT INTO subscription_requests
-    (user_id, group_id, amount, currency, payment_method, screenshot_url, note, details_snapshot, status, months_added)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1)
+    (user_id, group_id, amount, currency, payment_method, screenshot_url, note, details_snapshot, status, months_added, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 1, ?, ?)
 ");
+$prepareError = $stmt ? '' : $conn->error;
 $defaultGroupId = !empty($settings['default_group_id']) ? intval($settings['default_group_id']) : null;
 $amount = floatval($settings['monthly_amount'] ?? 0);
 $currency = trim($settings['currency'] ?? 'PKR');
-$stmt->bind_param(
-    "iidsssss",
-    $userId,
-    $defaultGroupId,
-    $amount,
-    $currency,
-    $paymentMethod,
-    $screenshotUrl,
-    $note,
-    $detailsSnapshot
-);
+$createdAt = date('Y-m-d H:i:s');
+if ($stmt) {
+    $stmt->bind_param(
+        "iidsssssss",
+        $userId,
+        $defaultGroupId,
+        $amount,
+        $currency,
+        $paymentMethod,
+        $screenshotUrl,
+        $note,
+        $detailsSnapshot,
+        $createdAt,
+        $createdAt
+    );
+}
 
-if ($stmt->execute()) {
+if ($stmt && $stmt->execute()) {
     echo json_encode([
         "status" => true,
         "message" => "Subscription request sent successfully. Please wait for admin approval."
@@ -156,10 +166,12 @@ if ($stmt->execute()) {
     @unlink($absolutePath);
     echo json_encode([
         "status" => false,
-        "message" => "Unable to submit subscription request."
+        "message" => "Unable to submit subscription request." . ($prepareError !== '' ? ' ' . $prepareError : '')
     ]);
 }
 
-$stmt->close();
+if ($stmt) {
+    $stmt->close();
+}
 $conn->close();
 ?>

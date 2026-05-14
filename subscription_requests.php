@@ -8,7 +8,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-ensure_subscription_tables($conn);
+$schemaStatus = ensure_subscription_tables($conn);
 
 function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -100,38 +100,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
             bank_account_number = ?,
             bank_iban = ?,
             payment_instructions = ?,
-            updated_by = ?
+            updated_by = ?,
+            updated_at = NOW()
         WHERE id = 1
     ");
-    $stmt->bind_param(
-        "dsisssssssssi",
-        $monthlyAmount,
-        $currency,
-        $defaultGroupId,
-        $jazzcashNumber,
-        $jazzcashTitle,
-        $easypaisaNumber,
-        $easypaisaTitle,
-        $bankName,
-        $bankAccountTitle,
-        $bankAccountNumber,
-        $bankIban,
-        $paymentInstructions,
-        $adminId
-    );
-    $stmt->execute();
-    $stmt->close();
+    if ($stmt) {
+        $stmt->bind_param(
+            "dsisssssssssi",
+            $monthlyAmount,
+            $currency,
+            $defaultGroupId,
+            $jazzcashNumber,
+            $jazzcashTitle,
+            $easypaisaNumber,
+            $easypaisaTitle,
+            $bankName,
+            $bankAccountTitle,
+            $bankAccountNumber,
+            $bankIban,
+            $paymentInstructions,
+            $adminId
+        );
+        $stmt->execute();
+        $stmt->close();
+        $_SESSION['subscription_flash'] = [
+            'type' => 'success',
+            'message' => 'Subscription settings updated successfully.'
+        ];
+    } else {
+        $_SESSION['subscription_flash'] = [
+            'type' => 'danger',
+            'message' => 'Unable to save subscription settings: ' . $conn->error
+        ];
+    }
 
-    $_SESSION['subscription_flash'] = [
-        'type' => 'success',
-        'message' => 'Subscription settings updated successfully.'
-    ];
     header("Location: subscription_requests.php");
     exit;
 }
 
 $flash = $_SESSION['subscription_flash'] ?? null;
 unset($_SESSION['subscription_flash']);
+
+if ((!is_array($flash) || empty($flash['message'])) && !empty($schemaStatus['message'])) {
+    $flash = [
+        'type' => 'warning',
+        'message' => 'Subscription setup warning: ' . $schemaStatus['message']
+    ];
+}
 
 $filters = [
     'status' => trim($_GET['status'] ?? ''),
@@ -158,8 +173,15 @@ $whereSql = $where ? "WHERE " . implode(" AND ", $where) : "";
 
 $groups = [];
 $groupsResult = $conn->query("SELECT id, group_name FROM `groups` ORDER BY group_name ASC");
-while ($groupRow = $groupsResult->fetch_assoc()) {
-    $groups[] = $groupRow;
+if ($groupsResult) {
+    while ($groupRow = $groupsResult->fetch_assoc()) {
+        $groups[] = $groupRow;
+    }
+} elseif (empty($flash['message'])) {
+    $flash = [
+        'type' => 'danger',
+        'message' => 'Unable to load groups list: ' . $conn->error
+    ];
 }
 
 $settings = get_subscription_settings($conn);
@@ -180,11 +202,19 @@ $requestsSql = "
     ORDER BY CASE sr.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, sr.created_at DESC, sr.id DESC
 ";
 $requestsStmt = $conn->prepare($requestsSql);
-if (!empty($params)) {
+if ($requestsStmt && !empty($params)) {
     $requestsStmt->bind_param($types, ...$params);
 }
-$requestsStmt->execute();
-$requestsResult = $requestsStmt->get_result();
+$requestsResult = false;
+if ($requestsStmt) {
+    $requestsStmt->execute();
+    $requestsResult = $requestsStmt->get_result();
+} elseif (empty($flash['message'])) {
+    $flash = [
+        'type' => 'danger',
+        'message' => 'Unable to load subscription requests: ' . $conn->error
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -430,6 +460,8 @@ $requestsResult = $requestsStmt->get_result();
 </body>
 </html>
 <?php
-$requestsStmt->close();
+if ($requestsStmt) {
+    $requestsStmt->close();
+}
 $conn->close();
 ?>

@@ -8,7 +8,11 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-ensure_subscription_tables($conn);
+$schemaStatus = ensure_subscription_tables($conn);
+if (!empty($schemaStatus['message'])) {
+    subscription_flash('danger', 'Subscription setup issue: ' . $schemaStatus['message']);
+    subscription_redirect();
+}
 
 function subscription_flash($type, $message) {
     $_SESSION['subscription_flash'] = [
@@ -49,7 +53,8 @@ if ($action === 'reject') {
         UPDATE subscription_requests
         SET status = 'rejected',
             admin_note = ?,
-            rejected_at = NOW()
+            rejected_at = NOW(),
+            updated_at = NOW()
         WHERE id = ? AND status = 'pending'
     ");
     $stmt->bind_param("si", $adminNote, $requestId);
@@ -193,7 +198,8 @@ try {
             subscription_start_date = ?,
             subscription_end_date = ?,
             approved_by = ?,
-            approved_at = NOW()
+            approved_at = NOW(),
+            updated_at = NOW()
         WHERE id = ? AND status = 'pending'
     ");
     $approveStmt->bind_param(

@@ -5,7 +5,14 @@ include "subscription_schema.php";
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-ensure_subscription_tables($conn);
+$schemaStatus = ensure_subscription_tables($conn);
+if (!empty($schemaStatus['message'])) {
+    echo json_encode([
+        "status" => false,
+        "message" => "Subscription setup issue: " . $schemaStatus['message']
+    ]);
+    exit;
+}
 
 $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 if ($userId <= 0) {
@@ -30,14 +37,22 @@ $subscriptionStmt = $conn->prepare("
     WHERE gm.user_id = ?
     ORDER BY CASE WHEN gm.end_date IS NULL THEN 1 ELSE 0 END, gm.end_date DESC, gm.group_id DESC
 ");
-$subscriptionStmt->bind_param("i", $userId);
-$subscriptionStmt->execute();
-$subscriptionResult = $subscriptionStmt->get_result();
 $subscriptions = [];
-while ($row = $subscriptionResult->fetch_assoc()) {
-    $subscriptions[] = $row;
+if ($subscriptionStmt) {
+    $subscriptionStmt->bind_param("i", $userId);
+    $subscriptionStmt->execute();
+    $subscriptionResult = $subscriptionStmt->get_result();
+    while ($row = $subscriptionResult->fetch_assoc()) {
+        $subscriptions[] = $row;
+    }
+    $subscriptionStmt->close();
+} else {
+    echo json_encode([
+        "status" => false,
+        "message" => "Unable to load subscriptions: " . $conn->error
+    ]);
+    exit;
 }
-$subscriptionStmt->close();
 
 $historyStmt = $conn->prepare("
     SELECT
@@ -63,14 +78,22 @@ $historyStmt = $conn->prepare("
     WHERE sr.user_id = ?
     ORDER BY sr.created_at DESC, sr.id DESC
 ");
-$historyStmt->bind_param("i", $userId);
-$historyStmt->execute();
-$historyResult = $historyStmt->get_result();
 $requests = [];
-while ($row = $historyResult->fetch_assoc()) {
-    $requests[] = $row;
+if ($historyStmt) {
+    $historyStmt->bind_param("i", $userId);
+    $historyStmt->execute();
+    $historyResult = $historyStmt->get_result();
+    while ($row = $historyResult->fetch_assoc()) {
+        $requests[] = $row;
+    }
+    $historyStmt->close();
+} else {
+    echo json_encode([
+        "status" => false,
+        "message" => "Unable to load request history: " . $conn->error
+    ]);
+    exit;
 }
-$historyStmt->close();
 $conn->close();
 
 echo json_encode([

@@ -1,6 +1,75 @@
 <?php
+function subscription_column_exists($conn, $table, $column) {
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+    ");
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param("ss", $table, $column);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return intval($row['total'] ?? 0) > 0;
+}
+
+function subscription_table_exists($conn, $table) {
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+    ");
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param("s", $table);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return intval($row['total'] ?? 0) > 0;
+}
+
+function subscription_index_exists($conn, $table, $index) {
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND INDEX_NAME = ?
+    ");
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param("ss", $table, $index);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return intval($row['total'] ?? 0) > 0;
+}
+
+function subscription_add_column_if_missing($conn, $table, $column, $definition) {
+    if (!subscription_column_exists($conn, $table, $column)) {
+        return $conn->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+    }
+    return true;
+}
+
+function subscription_create_index_if_missing($conn, $table, $index, $expression) {
+    if (!subscription_index_exists($conn, $table, $index)) {
+        return $conn->query("CREATE INDEX `$index` ON `$table` $expression");
+    }
+    return true;
+}
+
 function ensure_subscription_tables($conn) {
-    $conn->query("
+    $errors = [];
+
+    if (!$conn->query("
         CREATE TABLE IF NOT EXISTS subscription_settings (
             id TINYINT NOT NULL PRIMARY KEY,
             monthly_amount DECIMAL(10,2) NOT NULL DEFAULT 1000.00,
@@ -14,13 +83,13 @@ function ensure_subscription_tables($conn) {
             bank_account_title VARCHAR(160) NULL,
             bank_account_number VARCHAR(80) NULL,
             bank_iban VARCHAR(80) NULL,
-            payment_instructions TEXT NULL,
-            updated_by INT NULL,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            payment_instructions TEXT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    ");
+    ")) {
+        $errors[] = $conn->error;
+    }
 
-    $conn->query("
+    if (!$conn->query("
         CREATE TABLE IF NOT EXISTS subscription_requests (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
@@ -39,22 +108,75 @@ function ensure_subscription_tables($conn) {
             subscription_end_date DATE NULL,
             approved_by INT NULL,
             approved_at DATETIME NULL,
-            rejected_at DATETIME NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_subscription_requests_user_id (user_id),
-            INDEX idx_subscription_requests_status (status),
-            INDEX idx_subscription_requests_created_at (created_at)
+            rejected_at DATETIME NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    ");
+    ")) {
+        $errors[] = $conn->error;
+    }
 
-    $conn->query("
-        INSERT INTO subscription_settings (id)
-        SELECT 1
-        WHERE NOT EXISTS (
-            SELECT 1 FROM subscription_settings WHERE id = 1
-        )
-    ");
+    if (subscription_table_exists($conn, 'subscription_settings')) {
+        $settingsColumns = [
+            'updated_by' => "INT NULL",
+            'updated_at' => "DATETIME NULL"
+        ];
+        foreach ($settingsColumns as $column => $definition) {
+            if (!subscription_add_column_if_missing($conn, 'subscription_settings', $column, $definition)) {
+                $errors[] = $conn->error;
+            }
+        }
+        $conn->query("UPDATE subscription_settings SET updated_at = NOW() WHERE updated_at IS NULL");
+    }
+
+    if (subscription_table_exists($conn, 'subscription_requests')) {
+        $requestColumns = [
+            'details_snapshot' => "TEXT NULL",
+            'status' => "VARCHAR(20) NOT NULL DEFAULT 'pending'",
+            'admin_note' => "TEXT NULL",
+            'invoice_no' => "VARCHAR(80) NULL",
+            'months_added' => "INT NOT NULL DEFAULT 1",
+            'subscription_start_date' => "DATE NULL",
+            'subscription_end_date' => "DATE NULL",
+            'approved_by' => "INT NULL",
+            'approved_at' => "DATETIME NULL",
+            'rejected_at' => "DATETIME NULL",
+            'created_at' => "DATETIME NULL",
+            'updated_at' => "DATETIME NULL"
+        ];
+        foreach ($requestColumns as $column => $definition) {
+            if (!subscription_add_column_if_missing($conn, 'subscription_requests', $column, $definition)) {
+                $errors[] = $conn->error;
+            }
+        }
+        if (!subscription_create_index_if_missing($conn, 'subscription_requests', 'idx_subscription_requests_user_id', '(user_id)')) {
+            $errors[] = $conn->error;
+        }
+        if (!subscription_create_index_if_missing($conn, 'subscription_requests', 'idx_subscription_requests_status', '(status)')) {
+            $errors[] = $conn->error;
+        }
+        if (!subscription_create_index_if_missing($conn, 'subscription_requests', 'idx_subscription_requests_created_at', '(created_at)')) {
+            $errors[] = $conn->error;
+        }
+        $conn->query("UPDATE subscription_requests SET created_at = NOW() WHERE created_at IS NULL");
+        $conn->query("UPDATE subscription_requests SET updated_at = NOW() WHERE updated_at IS NULL");
+    }
+
+    if (subscription_table_exists($conn, 'subscription_settings')) {
+        $conn->query("
+            INSERT INTO subscription_settings (id, updated_at)
+            SELECT 1, NOW()
+            WHERE NOT EXISTS (
+                SELECT 1 FROM subscription_settings WHERE id = 1
+            )
+        ");
+        if ($conn->error) {
+            $errors[] = $conn->error;
+        }
+    }
+
+    return [
+        'ok' => empty($errors),
+        'message' => empty($errors) ? '' : implode(' | ', array_unique(array_filter($errors)))
+    ];
 }
 
 function get_subscription_settings($conn) {
@@ -65,6 +187,26 @@ function get_subscription_settings($conn) {
         WHERE ss.id = 1
         LIMIT 1
     ");
+    if (!$stmt) {
+        return [
+            'id' => 1,
+            'monthly_amount' => '1000.00',
+            'currency' => 'PKR',
+            'default_group_id' => null,
+            'default_group_name' => null,
+            'jazzcash_number' => '',
+            'jazzcash_title' => '',
+            'easypaisa_number' => '',
+            'easypaisa_title' => '',
+            'bank_name' => '',
+            'bank_account_title' => '',
+            'bank_account_number' => '',
+            'bank_iban' => '',
+            'payment_instructions' => '',
+            'updated_by' => null,
+            'updated_at' => null
+        ];
+    }
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result ? $result->fetch_assoc() : null;
@@ -83,7 +225,9 @@ function get_subscription_settings($conn) {
         'bank_account_title' => '',
         'bank_account_number' => '',
         'bank_iban' => '',
-        'payment_instructions' => ''
+        'payment_instructions' => '',
+        'updated_by' => null,
+        'updated_at' => null
     ];
 }
 
