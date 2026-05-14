@@ -859,6 +859,12 @@ if (!empty($requestUserIds)) {
                                     break;
                                 }
                             }
+                            $displayStatusClass = $statusClass;
+                            $displayStatusText = strtoupper($row['status']);
+                            if ($row['status'] === 'rejected' && $hasActiveMembership) {
+                                $displayStatusClass = 'approved';
+                                $displayStatusText = 'ACTIVE ACCESS';
+                            }
                             $liveSummary = $primaryMembership
                                 ? (($primaryMembership['group_name'] ?? 'Group') . ' | ' . ($primaryMembership['end_date'] ?: '-') . ' | ' . (intval($primaryMembership['is_active'] ?? 0) === 1 ? 'Active' : 'Expired'))
                                 : 'No group row yet';
@@ -874,7 +880,7 @@ if (!empty($requestUserIds)) {
                                 </div>
                                 <div class="invoice-row-main">
                                     <div class="invoice-row-top">
-                                        <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
+                                        <span class="badge-soft badge-<?php echo h($displayStatusClass); ?>"><?php echo h($displayStatusText); ?></span>
                                         <span class="meta">#<?php echo intval($row['id']); ?></span>
                                     </div>
                                     <div class="invoice-row-title"><?php echo h($row['username'] ?? 'Unknown User'); ?></div>
@@ -957,7 +963,7 @@ if (!empty($requestUserIds)) {
                                         <div class="request-top-summary">
                                             <div class="request-stat-card">
                                                 <div class="request-stat-label">Status</div>
-                                                <div class="request-stat-value"><span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span></div>
+                                                <div class="request-stat-value"><span class="badge-soft badge-<?php echo h($displayStatusClass); ?>"><?php echo h($displayStatusText); ?></span></div>
                                                 <div class="request-stat-sub">Request #<?php echo intval($row['id']); ?></div>
                                             </div>
                                             <div class="request-stat-card">
@@ -1140,6 +1146,9 @@ if (!empty($requestUserIds)) {
                                                             <?php endif; ?>
                                                         <?php else: ?>
                                                             Rejected: <?php echo h($row['rejected_at']); ?><br>
+                                                            <?php if ($hasActiveMembership): ?>
+                                                                Current Access: User now has active subscription access from a live group row.<br>
+                                                            <?php endif; ?>
                                                             Live Status: <span class="js-live-primary-summary"><?php echo h($liveSummary); ?></span>
                                                         <?php endif; ?>
                                                         <?php if (!empty($row['admin_note'])): ?>
