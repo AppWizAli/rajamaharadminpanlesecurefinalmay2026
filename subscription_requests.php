@@ -469,8 +469,10 @@ if (!empty($requestUserIds)) {
         }
         .detail-membership-line:last-child { margin-bottom: 0; }
         .approve-state-text { min-height: 20px; }
-        .subscription-detail-dialog {
-            max-width: min(1280px, calc(100vw - 48px));
+        #invoiceDetailModal .subscription-detail-dialog {
+            width: min(1520px, calc(100vw - 40px)) !important;
+            max-width: min(1520px, calc(100vw - 40px)) !important;
+            margin: 1rem auto;
         }
         .modal-content {
             border-radius: 22px;
@@ -489,10 +491,11 @@ if (!empty($requestUserIds)) {
         .modal-body {
             background: #fff;
             padding: 22px;
+            overflow-x: hidden;
         }
         .request-detail-layout {
             display: grid;
-            grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+            grid-template-columns: minmax(320px, 380px) minmax(680px, 1fr);
             gap: 22px;
             align-items: start;
         }
@@ -507,6 +510,7 @@ if (!empty($requestUserIds)) {
             display: flex;
             flex-direction: column;
             gap: 16px;
+            min-width: 0;
         }
         .request-top-summary {
             display: grid;
@@ -640,6 +644,34 @@ if (!empty($requestUserIds)) {
             font-size: 13px;
             line-height: 1.6;
         }
+        .live-membership-tools {
+            display: grid;
+            grid-template-columns: 170px 1fr 1fr auto;
+            gap: 10px;
+            margin-top: 12px;
+            align-items: end;
+        }
+        .live-membership-tools .form-control {
+            min-height: 42px;
+        }
+        .live-membership-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .membership-action-feedback {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--sub-muted);
+            min-height: 18px;
+        }
+        .membership-action-feedback.error {
+            color: #b42318;
+        }
+        .membership-action-feedback.success {
+            color: #027a48;
+        }
         .request-reject-box textarea,
         .request-main-panel textarea {
             resize: vertical;
@@ -674,11 +706,15 @@ if (!empty($requestUserIds)) {
             .request-top-summary,
             .request-overview-grid,
             .request-actions-grid,
-            .request-form-grid {
+            .request-form-grid,
+            .live-membership-tools {
                 grid-template-columns: 1fr;
             }
             .request-media-panel {
                 position: static;
+            }
+            .live-membership-actions {
+                justify-content: stretch;
             }
         }
     </style>
@@ -988,6 +1024,32 @@ if (!empty($requestUserIds)) {
                                                                     </span>
                                                                 </div>
                                                                 <div class="live-membership-date"><?php echo h($membership['start_date'] ?: '-'); ?> to <?php echo h($membership['end_date'] ?: '-'); ?></div>
+                                                                <form class="js-membership-form live-membership-tools" data-user-id="<?php echo $userId; ?>" data-group-id="<?php echo intval($membership['group_id']); ?>" data-request-id="<?php echo intval($row['id']); ?>">
+                                                                    <div>
+                                                                        <label>Status</label>
+                                                                        <select class="form-control" name="membership_status">
+                                                                            <option value="active" <?php echo intval($membership['is_active'] ?? 0) === 1 ? 'selected' : ''; ?>>Active</option>
+                                                                            <option value="inactive" <?php echo intval($membership['is_active'] ?? 0) === 1 ? '' : 'selected'; ?>>Inactive</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label>Start Date</label>
+                                                                        <input type="date" class="form-control" name="start_date" value="<?php echo h($membership['start_date'] ?: ''); ?>">
+                                                                    </div>
+                                                                    <div>
+                                                                        <label>End Date</label>
+                                                                        <input type="date" class="form-control" name="end_date" value="<?php echo h($membership['end_date'] ?: ''); ?>">
+                                                                    </div>
+                                                                    <div class="live-membership-actions">
+                                                                        <button type="button" class="sub-btn sub-btn-light js-membership-increase">
+                                                                            <i class="fa fa-plus-circle"></i> +31 Days
+                                                                        </button>
+                                                                        <button type="submit" class="sub-btn sub-btn-primary">
+                                                                            <i class="fa fa-save"></i> Save
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                                <div class="membership-action-feedback"></div>
                                                             </div>
                                                         <?php endforeach; ?>
                                                     <?php else: ?>
@@ -1128,7 +1190,7 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
-function renderLiveMembershipRows(memberships) {
+function renderLiveMembershipRows(memberships, userId, requestId) {
     if (!Array.isArray(memberships) || memberships.length === 0) {
         return '<div class="detail-membership-line text-muted">No group subscription row exists yet for this user.</div>';
     }
@@ -1142,6 +1204,28 @@ function renderLiveMembershipRows(memberships) {
                     '<span class="badge-soft badge-' + (isActive ? 'approved' : 'pending') + '">' + (isActive ? 'ACTIVE' : 'EXPIRED') + '</span>' +
                 '</div>' +
                 '<div class="live-membership-date">' + escapeHtml(membership.start_date || '-') + ' to ' + escapeHtml(membership.end_date || '-') + '</div>' +
+                '<form class="js-membership-form live-membership-tools" data-user-id="' + escapeHtml(userId) + '" data-group-id="' + escapeHtml(Number(membership.group_id || 0)) + '" data-request-id="' + escapeHtml(requestId) + '">' +
+                    '<div>' +
+                        '<label>Status</label>' +
+                        '<select class="form-control" name="membership_status">' +
+                            '<option value="active"' + (isActive ? ' selected' : '') + '>Active</option>' +
+                            '<option value="inactive"' + (!isActive ? ' selected' : '') + '>Inactive</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label>Start Date</label>' +
+                        '<input type="date" class="form-control" name="start_date" value="' + escapeHtml(membership.start_date || '') + '">' +
+                    '</div>' +
+                    '<div>' +
+                        '<label>End Date</label>' +
+                        '<input type="date" class="form-control" name="end_date" value="' + escapeHtml(membership.end_date || '') + '">' +
+                    '</div>' +
+                    '<div class="live-membership-actions">' +
+                        '<button type="button" class="sub-btn sub-btn-light js-membership-increase"><i class="fa fa-plus-circle"></i> +31 Days</button>' +
+                        '<button type="submit" class="sub-btn sub-btn-primary"><i class="fa fa-save"></i> Save</button>' +
+                    '</div>' +
+                '</form>' +
+                '<div class="membership-action-feedback"></div>' +
             '</div>';
     }).join('');
 }
@@ -1156,7 +1240,7 @@ function buildLiveSummary(memberships) {
     return (firstMembership.group_name || 'Group') + ' | ' + (firstMembership.end_date || '-') + ' | ' + statusText;
 }
 
-function updateLiveStatusUI(container, memberships) {
+function updateLiveStatusUI(container, memberships, userId, requestId) {
     if (!container) {
         return;
     }
@@ -1167,7 +1251,7 @@ function updateLiveStatusUI(container, memberships) {
     var summary = buildLiveSummary(memberships);
 
     container.querySelectorAll('.js-live-memberships').forEach(function (node) {
-        node.innerHTML = renderLiveMembershipRows(memberships);
+        node.innerHTML = renderLiveMembershipRows(memberships, userId, requestId);
     });
 
     container.querySelectorAll('.js-live-primary-summary').forEach(function (node) {
@@ -1221,8 +1305,9 @@ function refreshRequestLiveData(modal, userId, requestId) {
             }
 
             var memberships = Array.isArray(payload.current_subscriptions) ? payload.current_subscriptions : [];
-            updateLiveStatusUI(modal, memberships);
+            updateLiveStatusUI(modal, memberships, userId, requestId);
             updateInvoiceRowLiveState(requestId, memberships);
+            initializeMembershipActions(modal);
 
             var approvalForm = modal.querySelector('.subscription-approval-form');
             if (approvalForm) {
@@ -1244,6 +1329,101 @@ function refreshRequestLiveData(modal, userId, requestId) {
         })
         .catch(function () {
         });
+}
+
+function setMembershipFeedback(form, message, type) {
+    if (!form) {
+        return;
+    }
+    var feedback = form.parentElement ? form.parentElement.querySelector('.membership-action-feedback') : null;
+    if (!feedback) {
+        return;
+    }
+    feedback.textContent = message || '';
+    feedback.classList.remove('error', 'success');
+    if (type) {
+        feedback.classList.add(type);
+    }
+}
+
+function initializeMembershipActions(scope) {
+    (scope || document).querySelectorAll('.js-membership-form').forEach(function (form) {
+        if (form.dataset.initialized === '1') {
+            return;
+        }
+        form.dataset.initialized = '1';
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            var modal = form.closest('#invoiceDetailModal');
+            var requestId = form.dataset.requestId || '';
+            var userId = form.dataset.userId || '';
+            var groupId = form.dataset.groupId || '';
+            var formData = new FormData(form);
+            formData.append('action', 'save_membership');
+            formData.append('user_id', userId);
+            formData.append('group_id', groupId);
+
+            setMembershipFeedback(form, 'Saving subscription row...', '');
+
+            fetch('subscription_membership_action.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || payload.success !== true) {
+                        setMembershipFeedback(form, (payload && payload.message) ? payload.message : 'Unable to save this subscription row.', 'error');
+                        return;
+                    }
+                    setMembershipFeedback(form, payload.message || 'Subscription row updated.', 'success');
+                    refreshRequestLiveData(modal, userId, requestId);
+                })
+                .catch(function () {
+                    setMembershipFeedback(form, 'Unable to save this subscription row right now.', 'error');
+                });
+        });
+
+        var increaseButton = form.querySelector('.js-membership-increase');
+        if (increaseButton) {
+            increaseButton.addEventListener('click', function () {
+                var modal = form.closest('#invoiceDetailModal');
+                var requestId = form.dataset.requestId || '';
+                var userId = form.dataset.userId || '';
+                var groupId = form.dataset.groupId || '';
+                var formData = new FormData();
+                formData.append('action', 'increase_membership');
+                formData.append('user_id', userId);
+                formData.append('group_id', groupId);
+
+                setMembershipFeedback(form, 'Increasing date by 31 days...', '');
+
+                fetch('subscription_membership_action.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (payload) {
+                        if (!payload || payload.success !== true) {
+                            setMembershipFeedback(form, (payload && payload.message) ? payload.message : 'Unable to increase date right now.', 'error');
+                            return;
+                        }
+                        setMembershipFeedback(form, payload.message || 'Subscription date increased.', 'success');
+                        refreshRequestLiveData(modal, userId, requestId);
+                    })
+                    .catch(function () {
+                        setMembershipFeedback(form, 'Unable to increase date right now.', 'error');
+                    });
+            });
+        }
+    });
 }
 
 function initializeApprovalForms(scope) {
@@ -1325,6 +1505,7 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.querySelector('.modal-title').textContent = button.dataset.title || 'Invoice Details';
             modal.querySelector('.modal-body').innerHTML = template.innerHTML;
             initializeApprovalForms(modal);
+            initializeMembershipActions(modal);
             refreshRequestLiveData(modal, button.dataset.userId, button.dataset.requestId);
             if (window.jQuery) {
                 window.jQuery(modal).modal('show');
