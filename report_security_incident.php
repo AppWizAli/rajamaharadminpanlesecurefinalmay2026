@@ -43,6 +43,13 @@ if ($incident_type === '') {
     $incident_type = 'unknown';
 }
 
+$ignoredTypes = ['app_start', 'location_permission_denied'];
+if (in_array(strtolower($incident_type), $ignoredTypes, true)) {
+    echo json_encode(["status" => true, "message" => "Incident ignored"]);
+    $conn->close();
+    exit;
+}
+
 $criticalTypes = ['screen_recording', 'screen_capture', 'root_device', 'usb_connection_detected', 'debugger_detected', 'tamper_detected'];
 $warningTypes = ['player_error', 'download_denied', 'location_permission_denied', 'app_block_check_failed'];
 $severity = 'info';

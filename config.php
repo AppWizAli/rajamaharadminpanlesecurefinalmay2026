@@ -19,7 +19,7 @@ $conn->set_charset("utf8mb4");
 $VIDEO_SIGN_SECRET = "v1_9e9b9d61b75a4b74a0f2c8b0d7a3e6f8f07b9a2d7f4c1b3e8a6d0c2b5f9a1c7e";
 
 // Signed URL TTLs (seconds)
-$VIDEO_SIGN_TTL_PLAYBACK = 900; // 15 minutes
+$VIDEO_SIGN_TTL_PLAYBACK = 1200; // 20 minutes
 $VIDEO_SIGN_TTL_DOWNLOAD = 3600; // 60 minutes (increase if downloads are large)
 
 // Video storage base directory (local files)
