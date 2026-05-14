@@ -44,6 +44,18 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
         .meta { font-size: 12px; color: #667085; line-height: 1.6; }
         .badge-current { display:inline-block; padding:6px 10px; border-radius:999px; background:#e7f6ec; color:#027a48; font-weight:700; font-size:12px; }
         .upload-note { color:#667085; font-size:13px; }
+        .upload-progress-card { display:none; margin-top:18px; border:1px solid #e6e9f2; border-radius:10px; background:#f8faff; padding:16px; }
+        .upload-progress-card.is-visible { display:block; }
+        .upload-progress-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+        .upload-progress-title { font-size:15px; font-weight:700; color:#14213d; }
+        .upload-progress-percent { font-size:22px; font-weight:800; color:#1b00ff; line-height:1; }
+        .upload-progress-bar-wrap { width:100%; height:12px; border-radius:999px; overflow:hidden; background:#e3e8f7; }
+        .upload-progress-bar { width:0; height:100%; border-radius:999px; background:linear-gradient(90deg, #1b00ff 0%, #5b8cff 100%); transition:width .25s ease; }
+        .upload-progress-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:10px; font-size:13px; color:#5f6b85; }
+        .upload-progress-status { margin-top:8px; font-size:13px; font-weight:600; color:#1f3b73; }
+        .upload-progress-status.is-error { color:#c1121f; }
+        .upload-progress-status.is-success { color:#087f5b; }
+        .upload-submit-btn[disabled] { opacity:0.75; cursor:not-allowed; }
     </style>
 </head>
 <body>
@@ -105,7 +117,7 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
                         <p class="section-subtitle-custom">Enter a version greater than the current APK, then choose the APK file.</p>
                     </div>
 
-                    <form action="apk.php" method="POST" enctype="multipart/form-data">
+                    <form id="apk-upload-form" action="apk.php" method="POST" enctype="multipart/form-data">
                         <div class="form-group row">
                             <label class="col-sm-12 col-md-3 col-form-label">Version Name</label>
                             <div class="col-sm-12 col-md-9">
@@ -124,12 +136,27 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
                             <label class="col-sm-12 col-md-3 col-form-label">APK File</label>
                             <div class="col-sm-12 col-md-9">
                                 <input type="file" class="form-control" id="apk-upload" name="apk_file" accept=".apk,application/vnd.android.package-archive" required>
+                                <div class="upload-note" id="apk-file-note">Choose the APK file to upload as the latest version.</div>
                             </div>
+                        </div>
+                        <div id="apk-upload-progress" class="upload-progress-card" aria-live="polite">
+                            <div class="upload-progress-head">
+                                <div class="upload-progress-title">Uploading APK</div>
+                                <div class="upload-progress-percent" id="apk-upload-percent">0%</div>
+                            </div>
+                            <div class="upload-progress-bar-wrap">
+                                <div class="upload-progress-bar" id="apk-upload-bar"></div>
+                            </div>
+                            <div class="upload-progress-meta">
+                                <span id="apk-upload-bytes">0 MB / 0 MB</span>
+                                <span id="apk-upload-file">Waiting for file</span>
+                            </div>
+                            <div class="upload-progress-status" id="apk-upload-status">Ready to upload.</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-sm-12 col-md-3"></div>
                             <div class="col-sm-12 col-md-9">
-                                <button type="submit" name="upload_apk" class="btn btn-custom-red">Upload And Set Latest</button>
+                                <button type="submit" name="upload_apk" class="btn btn-custom-red upload-submit-btn" id="apk-upload-submit">Upload And Set Latest</button>
                             </div>
                         </div>
                     </form>
@@ -180,6 +207,123 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('apk-upload-form');
+    if (!form || typeof XMLHttpRequest === 'undefined') {
+        return;
+    }
+
+    var fileInput = document.getElementById('apk-upload');
+    var fileNote = document.getElementById('apk-file-note');
+    var submitButton = document.getElementById('apk-upload-submit');
+    var progressCard = document.getElementById('apk-upload-progress');
+    var percentLabel = document.getElementById('apk-upload-percent');
+    var progressBar = document.getElementById('apk-upload-bar');
+    var bytesLabel = document.getElementById('apk-upload-bytes');
+    var fileLabel = document.getElementById('apk-upload-file');
+    var statusLabel = document.getElementById('apk-upload-status');
+    var originalButtonText = submitButton ? submitButton.textContent : 'Upload And Set Latest';
+
+    function formatBytes(bytes) {
+        var size = Number(bytes || 0);
+        if (size <= 0) {
+            return '0 MB';
+        }
+        return (size / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    function setStatus(message, state) {
+        statusLabel.textContent = message;
+        statusLabel.classList.remove('is-error', 'is-success');
+        if (state) {
+            statusLabel.classList.add(state);
+        }
+    }
+
+    function updateProgress(loaded, total) {
+        var percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+        percentLabel.textContent = percent + '%';
+        progressBar.style.width = percent + '%';
+        bytesLabel.textContent = formatBytes(loaded) + ' / ' + formatBytes(total);
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+            if (!file) {
+                fileNote.textContent = 'Choose the APK file to upload as the latest version.';
+                fileLabel.textContent = 'Waiting for file';
+                return;
+            }
+            fileNote.textContent = 'Selected: ' + file.name + ' (' + formatBytes(file.size) + ')';
+            fileLabel.textContent = file.name;
+            bytesLabel.textContent = '0 MB / ' + formatBytes(file.size);
+        });
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+            setStatus('Please choose an APK file first.', 'is-error');
+            progressCard.classList.add('is-visible');
+            return;
+        }
+
+        var file = fileInput.files[0];
+        var xhr = new XMLHttpRequest();
+        var formData = new FormData(form);
+
+        progressCard.classList.add('is-visible');
+        updateProgress(0, file.size || 0);
+        fileLabel.textContent = file.name;
+        setStatus('Uploading APK to server...', '');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Uploading...';
+
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.upload.addEventListener('progress', function (progressEvent) {
+            if (!progressEvent.lengthComputable) {
+                percentLabel.textContent = '...';
+                bytesLabel.textContent = formatBytes(progressEvent.loaded) + ' uploaded';
+                setStatus('Uploading APK to server...', '');
+                return;
+            }
+            updateProgress(progressEvent.loaded, progressEvent.total);
+            setStatus('Uploading APK to server...', '');
+        });
+
+        xhr.addEventListener('load', function () {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                updateProgress(file.size || 0, file.size || 0);
+                setStatus('Upload completed. Finalizing APK version...', 'is-success');
+                window.location.href = xhr.responseURL || 'upload_apk.php?success=' + encodeURIComponent('APK uploaded successfully.');
+                return;
+            }
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+            setStatus('Upload failed. Please try again.', 'is-error');
+        });
+
+        xhr.addEventListener('error', function () {
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+            setStatus('Upload failed because the connection was interrupted.', 'is-error');
+        });
+
+        xhr.addEventListener('abort', function () {
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText;
+            setStatus('Upload was cancelled before completion.', 'is-error');
+        });
+
+        xhr.send(formData);
+    });
+})();
+</script>
 </body>
 </html>
 <?php $conn->close(); ?>
