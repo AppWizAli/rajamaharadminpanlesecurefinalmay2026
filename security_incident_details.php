@@ -14,6 +14,18 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function current_request_url() {
+    $url = "security_incident_details.php";
+    $query = http_build_query($_GET);
+    if ($query !== '') {
+        $url .= "?" . $query;
+    }
+    return $url;
+}
+
+$flash = $_SESSION['security_flash'] ?? null;
+unset($_SESSION['security_flash']);
+
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 $device_id = trim($_GET['device_id'] ?? '');
 $event = trim($_GET['event'] ?? '');
@@ -83,6 +95,7 @@ if ($first) {
     $result->data_seek(0);
 }
 $returnUrl = "security_incidents.php";
+$currentUrl = current_request_url();
 ?>
 <!DOCTYPE html>
 <html>
@@ -112,6 +125,9 @@ $returnUrl = "security_incidents.php";
         .filters-grid { display:grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap:10px; }
         @media (max-width: 992px) { .filters-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
         @media (max-width: 576px) { .filters-grid { grid-template-columns: 1fr; } }
+        .toolbar-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+        .selection-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .table-check { width: 22px; height: 22px; }
     </style>
 </head>
 <body>
@@ -134,6 +150,15 @@ $returnUrl = "security_incidents.php";
                 </div>
             </div>
         </div>
+
+        <?php if (is_array($flash) && !empty($flash['message'])): ?>
+            <div class="alert alert-<?php echo h($flash['type'] ?? 'info'); ?> alert-dismissible fade show" role="alert">
+                <?php echo h($flash['message']); ?>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        <?php endif; ?>
 
         <?php if ($first): ?>
             <div class="pd-20 card-box mb-30">
@@ -180,19 +205,43 @@ $returnUrl = "security_incidents.php";
             </form>
         </div>
 
+        <form id="bulkDeleteIncidentsForm" method="post" action="security_delete_incidents.php" onsubmit="return confirm('Delete the selected issue records?');">
+            <input type="hidden" name="mode" value="incident">
+            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
+        </form>
+
         <?php if ($result && $result->num_rows > 0): ?>
+            <div class="toolbar-row mb-3">
+                <div>
+                    <strong>Issue Records</strong><br>
+                    <span class="meta">Newest issues are already on top. Select one or all visible issue cards to delete them.</span>
+                </div>
+                <div class="selection-tools">
+                    <label class="mb-0 d-flex align-items-center" style="gap:8px;">
+                        <input type="checkbox" id="selectAllIncidents" class="table-check">
+                        <span>Select all</span>
+                    </label>
+                    <button class="btn btn-danger" type="submit" form="bulkDeleteIncidentsForm">
+                        <i class="fa fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+            </div>
+
             <?php while ($row = $result->fetch_assoc()): ?>
                 <?php $risk = in_array($row['severity'], ['critical', 'warning', 'info'], true) ? $row['severity'] : 'info'; ?>
                 <div class="event-card <?php echo h($risk); ?>">
                     <div class="d-flex flex-wrap justify-content-between">
-                        <div>
-                            <span class="badge-risk risk-<?php echo h($risk); ?>"><?php echo h(strtoupper($risk)); ?></span>
-                            <strong class="ml-2"><?php echo h($row['incident_label'] ?: $row['incident_type']); ?></strong>
-                            <div class="meta mt-2">
-                                Type: <?php echo h($row['incident_type']); ?> |
-                                Activity: <?php echo h($row['app_area']); ?> |
-                                Time: <?php echo h($row['created_at']); ?> |
-                                IP: <?php echo h($row['ip_address']); ?>
+                        <div class="d-flex align-items-start" style="gap:12px;">
+                            <input type="checkbox" class="table-check incident-checkbox mt-1" name="incident_ids[]" value="<?php echo intval($row['id']); ?>" form="bulkDeleteIncidentsForm">
+                            <div>
+                                <span class="badge-risk risk-<?php echo h($risk); ?>"><?php echo h(strtoupper($risk)); ?></span>
+                                <strong class="ml-2"><?php echo h($row['incident_label'] ?: $row['incident_type']); ?></strong>
+                                <div class="meta mt-2">
+                                    Type: <?php echo h($row['incident_type']); ?> |
+                                    Activity: <?php echo h($row['app_area']); ?> |
+                                    Time: <?php echo h($row['created_at']); ?> |
+                                    IP: <?php echo h($row['ip_address']); ?>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -247,6 +296,28 @@ $returnUrl = "security_incidents.php";
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var selectAll = document.getElementById('selectAllIncidents');
+    var checkboxes = document.querySelectorAll('.incident-checkbox');
+    if (!selectAll || !checkboxes.length) {
+        return;
+    }
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            var allChecked = Array.from(checkboxes).every(function (item) { return item.checked; });
+            selectAll.checked = allChecked;
+        });
+    });
+});
+</script>
 </body>
 </html>
 <?php

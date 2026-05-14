@@ -18,6 +18,25 @@ function current_query_string() {
     return http_build_query($_GET);
 }
 
+function current_request_url() {
+    $url = "security_incidents.php";
+    $query = current_query_string();
+    if ($query !== '') {
+        $url .= "?" . $query;
+    }
+    return $url;
+}
+
+function make_group_key($userId, $deviceId) {
+    return base64_encode(json_encode([
+        'user_id' => intval($userId),
+        'device_id' => (string)$deviceId
+    ]));
+}
+
+$flash = $_SESSION['security_flash'] ?? null;
+unset($_SESSION['security_flash']);
+
 $filters = [
     'q' => trim($_GET['q'] ?? ''),
     'user_id' => isset($_GET['user_id']) ? intval($_GET['user_id']) : 0,
@@ -108,7 +127,7 @@ $sql = "
     LEFT JOIN user_security_blocks usb ON usb.user_id = si.user_id
     $whereSql
     GROUP BY COALESCE(si.user_id, 0), COALESCE(NULLIF(si.device_id, ''), 'unknown'), u.username, u.email, usb.is_blocked, usb.message
-    ORDER BY critical_events DESC, last_seen DESC
+    ORDER BY last_seen DESC, critical_events DESC, warning_events DESC
     LIMIT 500
 ";
 
@@ -118,11 +137,7 @@ if (!empty($params)) {
 }
 $stmt->execute();
 $result = $stmt->get_result();
-$returnUrl = "security_incidents.php";
-$queryString = current_query_string();
-if ($queryString !== '') {
-    $returnUrl .= "?" . $queryString;
-}
+$returnUrl = current_request_url();
 ?>
 <!DOCTYPE html>
 <html>
@@ -160,6 +175,9 @@ if ($queryString !== '') {
         @media (max-width: 992px) { .filters-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
         @media (max-width: 576px) { .filters-grid { grid-template-columns: 1fr; } }
         .message-box { min-width: 240px; }
+        .toolbar-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+        .selection-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .table-check { width: 22px; height: 22px; }
     </style>
 </head>
 <body>
@@ -173,12 +191,21 @@ if ($queryString !== '') {
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="page-title">
                         <h4 class="mb-0">Security Center</h4>
-                        <small>One row per user/device. Open details to see every error, player issue, and suspicious action.</small>
+                        <small>Newest user/device issues are shown first. Open details to see every error, player issue, and suspicious action.</small>
                     </div>
                     <a class="btn btn-outline-secondary" href="security_incidents.php">Clear Filters</a>
                 </div>
             </div>
         </div>
+
+        <?php if (is_array($flash) && !empty($flash['message'])): ?>
+            <div class="alert alert-<?php echo h($flash['type'] ?? 'info'); ?> alert-dismissible fade show" role="alert">
+                <?php echo h($flash['message']); ?>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        <?php endif; ?>
 
         <div class="pd-20 card-box security-card mb-30">
             <form method="get">
@@ -208,10 +235,31 @@ if ($queryString !== '') {
         </div>
 
         <div class="pd-20 card-box security-card mb-30">
+            <form id="bulkDeleteGroupsForm" method="post" action="security_delete_incidents.php" onsubmit="return confirm('Delete selected security rows and all their issue records?');">
+                <input type="hidden" name="mode" value="group">
+                <input type="hidden" name="return_url" value="<?php echo h($returnUrl); ?>">
+            </form>
+            <div class="toolbar-row mb-3">
+                <div>
+                    <strong>Security Users / Devices</strong><br>
+                    <span class="meta">Use the checkboxes to delete one selected row or select all visible rows.</span>
+                </div>
+                <div class="selection-tools">
+                    <label class="mb-0 d-flex align-items-center" style="gap:8px;">
+                        <input type="checkbox" id="selectAllGroups" class="table-check">
+                        <span>Select all</span>
+                    </label>
+                    <button class="btn btn-danger" type="submit" form="bulkDeleteGroupsForm">
+                        <i class="fa fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-borderless">
                     <thead class="bg-dark text-white">
                     <tr>
+                        <th style="width:44px;"></th>
                         <th>Risk</th>
                         <th>User</th>
                         <th>Device</th>
@@ -234,8 +282,12 @@ if ($queryString !== '') {
                             $rowClass = $riskClass === 'critical' ? 'risk-row-critical' : ($riskClass === 'warning' ? 'risk-row-warning' : '');
                             $defaultMessage = $row['block_message'] ?: 'Your app access is currently paused. Please contact Urdu Bolo support.';
                             $detailUrl = "security_incident_details.php?user_id=" . $userId . "&device_id=" . urlencode($row['device_key']);
+                            $groupKey = make_group_key($userId, $row['device_key']);
                             ?>
                             <tr class="<?php echo $rowClass; ?>">
+                                <td class="align-middle">
+                                    <input type="checkbox" class="table-check group-checkbox" name="group_keys[]" value="<?php echo h($groupKey); ?>" form="bulkDeleteGroupsForm">
+                                </td>
                                 <td>
                                     <span class="risk-dot risk-<?php echo $riskClass; ?>"></span>
                                     <?php if ($riskClass === 'critical'): ?>
@@ -308,7 +360,7 @@ if ($queryString !== '') {
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <tr><td colspan="7" class="text-center text-muted">No security users/devices found.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted">No security users/devices found.</td></tr>
                     <?php endif; ?>
                     </tbody>
                 </table>
@@ -321,6 +373,28 @@ if ($queryString !== '') {
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var selectAll = document.getElementById('selectAllGroups');
+    var checkboxes = document.querySelectorAll('.group-checkbox');
+    if (!selectAll || !checkboxes.length) {
+        return;
+    }
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            var allChecked = Array.from(checkboxes).every(function (item) { return item.checked; });
+            selectAll.checked = allChecked;
+        });
+    });
+});
+</script>
 </body>
 </html>
 <?php
