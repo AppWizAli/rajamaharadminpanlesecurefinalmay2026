@@ -291,27 +291,206 @@ if (!empty($requestUserIds)) {
     <link rel="stylesheet" href="vendors/styles/css/custom.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
-        .subscription-card { border-radius: 10px; border: 1px solid #edf0f5; }
-        .request-card { border: 1px solid #edf0f5; border-radius: 10px; padding: 18px; background: #fff; margin-bottom: 16px; }
-        .request-card.pending { border-left: 5px solid #f59f00; }
-        .request-card.approved { border-left: 5px solid #027a48; }
-        .request-card.rejected { border-left: 5px solid #b42318; }
-        .meta { font-size: 12px; color: #667085; line-height: 1.7; }
+        :root {
+            --sub-accent: #f59300;
+            --sub-accent-dark: #cf7c00;
+            --sub-ink: #13254b;
+            --sub-soft: #fff8ec;
+            --sub-border: #e8edf4;
+            --sub-muted: #667085;
+            --sub-bg: #ffffff;
+            --sub-panel: #f8fafc;
+        }
+        .subscription-card { border-radius: 18px; border: 1px solid var(--sub-border); box-shadow: 0 12px 35px rgba(15, 23, 42, 0.05); }
+        .section-note { color: var(--sub-muted); font-size: 13px; line-height: 1.6; }
+        .meta { font-size: 12px; color: var(--sub-muted); line-height: 1.7; }
         .badge-soft { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
         .badge-pending { background: #fff4d6; color: #9a6700; }
         .badge-approved { background: #e7f6ec; color: #027a48; }
         .badge-rejected { background: #fde8e8; color: #b42318; }
-        .filters-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 10px; }
-        .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 12px; }
-        .request-image { width: 110px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #e5e7eb; }
-        .section-note { color: #667085; font-size: 13px; }
-        .membership-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-top: 10px; }
-        .membership-line { font-size: 12px; color: #344054; margin-bottom: 6px; }
-        .membership-line:last-child { margin-bottom: 0; }
-        .approval-actions { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; }
-        .approve-state-text { min-height: 18px; }
+        .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 14px; }
+        .filters-grid { display: grid; grid-template-columns: minmax(240px, 2fr) minmax(180px, 1fr); gap: 12px; }
+        .sub-tabbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .sub-tab {
+            border: 1px solid var(--sub-border);
+            background: #fff;
+            color: var(--sub-ink);
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .sub-tab.active {
+            background: var(--sub-accent);
+            border-color: var(--sub-accent);
+            color: #111827;
+            box-shadow: 0 10px 24px rgba(245, 147, 0, 0.25);
+        }
+        .sub-tabsection { display: none; }
+        .sub-tabsection.active { display: block; }
+        .sub-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+        .sub-btn-primary {
+            background: var(--sub-accent);
+            color: #111827 !important;
+        }
+        .sub-btn-primary:hover {
+            background: var(--sub-accent-dark);
+            color: #111827 !important;
+        }
+        .sub-btn-dark {
+            background: var(--sub-ink);
+            color: #fff !important;
+        }
+        .sub-btn-light {
+            background: #fff;
+            color: var(--sub-ink) !important;
+            border-color: var(--sub-border);
+        }
+        .sub-btn-danger {
+            background: #b42318;
+            color: #fff !important;
+        }
+        .invoice-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .sub-hidden-template {
+            display: none !important;
+        }
+        .invoice-row {
+            display: grid;
+            grid-template-columns: 78px minmax(220px, 1.4fr) minmax(130px, 0.75fr) minmax(150px, 0.9fr) minmax(180px, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            background: var(--sub-bg);
+            border: 1px solid var(--sub-border);
+            border-radius: 18px;
+            padding: 14px;
+        }
+        .invoice-row-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid var(--sub-border);
+            background: #f4f4f5;
+        }
+        .invoice-row-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--sub-ink);
+            margin-top: 4px;
+        }
+        .invoice-row-main strong,
+        .invoice-row-summary strong,
+        .invoice-row-live strong {
+            color: var(--sub-ink);
+        }
+        .invoice-row-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .invoice-row-summary-label {
+            display: inline-block;
+            color: var(--sub-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .invoice-row-summary-value {
+            color: var(--sub-ink);
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+        .invoice-row-live {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--sub-muted);
+        }
+        .invoice-row-live strong {
+            display: block;
+            margin-bottom: 2px;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .invoice-row-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 160px minmax(0, 1fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .detail-screenshot {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid var(--sub-border);
+        }
+        .detail-box {
+            background: var(--sub-panel);
+            border: 1px solid var(--sub-border);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 14px;
+        }
+        .detail-box-title {
+            color: var(--sub-ink);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .detail-membership-line {
+            font-size: 13px;
+            color: #344054;
+            line-height: 1.7;
+            margin-bottom: 6px;
+        }
+        .detail-membership-line:last-child { margin-bottom: 0; }
+        .approve-state-text { min-height: 20px; }
+        .modal-content {
+            border-radius: 22px;
+            border: 0;
+            overflow: hidden;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #13254b 0%, #1f3c76 100%);
+            color: #fff;
+            border-bottom: 0;
+        }
+        .modal-header .close {
+            color: #fff;
+            opacity: 0.9;
+        }
+        .modal-body {
+            background: #fff;
+            padding: 22px;
+        }
         @media (max-width: 768px) {
-            .filters-grid, .settings-grid { grid-template-columns: 1fr; }
+            .filters-grid, .settings-grid, .detail-grid { grid-template-columns: 1fr; }
+            .invoice-row { grid-template-columns: 1fr; justify-items: start; }
+            .invoice-row-actions { justify-content: flex-start; }
         }
     </style>
 </head>
@@ -325,7 +504,7 @@ if (!empty($requestUserIds)) {
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="page-title">
                         <h4 class="mb-0">Subscriptions</h4>
-                        <small>Keep payment account details separate, and manage every invoice/request with the same group subscription rows used everywhere else.</small>
+                        <small>Separate payment account setup from invoice handling, and manage subscriptions with the same group rows used across the panel.</small>
                     </div>
                 </div>
             </div>
@@ -340,142 +519,212 @@ if (!empty($requestUserIds)) {
             </div>
         <?php endif; ?>
 
-        <div class="pd-20 card-box subscription-card mb-30">
-            <h5 class="mb-1">Payment Account Settings</h5>
-            <div class="section-note mb-3">Only payment amount and account details belong here. Group choice is handled on each invoice/request row below.</div>
-            <form method="post">
-                <input type="hidden" name="action" value="save_settings">
-                <div class="settings-grid">
-                    <div>
-                        <label>Monthly Amount</label>
-                        <input class="form-control" type="number" step="0.01" min="0" name="monthly_amount" value="<?php echo h($settings['monthly_amount']); ?>">
-                    </div>
-                    <div>
-                        <label>Currency</label>
-                        <input class="form-control" name="currency" value="<?php echo h($settings['currency']); ?>">
-                    </div>
-                    <div>
-                        <label>JazzCash Number</label>
-                        <input class="form-control" name="jazzcash_number" value="<?php echo h($settings['jazzcash_number']); ?>">
-                    </div>
-                    <div>
-                        <label>JazzCash Account Title</label>
-                        <input class="form-control" name="jazzcash_title" value="<?php echo h($settings['jazzcash_title']); ?>">
-                    </div>
-                    <div>
-                        <label>EasyPaisa Number</label>
-                        <input class="form-control" name="easypaisa_number" value="<?php echo h($settings['easypaisa_number']); ?>">
-                    </div>
-                    <div>
-                        <label>EasyPaisa Account Title</label>
-                        <input class="form-control" name="easypaisa_title" value="<?php echo h($settings['easypaisa_title']); ?>">
-                    </div>
-                    <div>
-                        <label>Bank Name</label>
-                        <input class="form-control" name="bank_name" value="<?php echo h($settings['bank_name']); ?>">
-                    </div>
-                    <div>
-                        <label>Bank Account Title</label>
-                        <input class="form-control" name="bank_account_title" value="<?php echo h($settings['bank_account_title']); ?>">
-                    </div>
-                    <div>
-                        <label>Bank Account Number</label>
-                        <input class="form-control" name="bank_account_number" value="<?php echo h($settings['bank_account_number']); ?>">
-                    </div>
-                    <div>
-                        <label>Bank IBAN</label>
-                        <input class="form-control" name="bank_iban" value="<?php echo h($settings['bank_iban']); ?>">
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <label>Extra Instructions</label>
-                    <textarea class="form-control" name="payment_instructions" rows="4"><?php echo h($settings['payment_instructions']); ?></textarea>
-                </div>
-                <button class="btn btn-primary mt-3" type="submit">
-                    <i class="fa fa-save"></i> Save Payment Details
-                </button>
-            </form>
+        <div class="sub-tabbar">
+            <button type="button" class="sub-tab active" data-sub-tab="settingsSection">Payment Details</button>
+            <button type="button" class="sub-tab" data-sub-tab="invoicesSection">Invoices & Requests</button>
         </div>
 
-        <div class="pd-20 card-box subscription-card mb-30">
-            <h5 class="mb-1">Invoices & Subscription Management</h5>
-            <div class="section-note mb-3">See sent invoices, current group subscription rows, and approve by either adding to group or increasing the existing date from the same row.</div>
-            <form method="get">
-                <div class="filters-grid">
-                    <input class="form-control" name="q" placeholder="User, email, invoice, method" value="<?php echo h($filters['q']); ?>">
-                    <select class="form-control" name="status">
-                        <option value="">All statuses</option>
-                        <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                        <option value="approved" <?php echo $filters['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
-                        <option value="rejected" <?php echo $filters['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
-                    </select>
-                </div>
-                <button class="btn btn-outline-primary mt-3" type="submit">
-                    <i class="fa fa-filter"></i> Filter
-                </button>
-            </form>
+        <div id="settingsSection" class="sub-tabsection active">
+            <div class="pd-20 card-box subscription-card mb-30">
+                <h5 class="mb-1">Payment Account Settings</h5>
+                <div class="section-note mb-3">Only monthly amount and account details live here. Group assignment and subscription actions are handled per invoice inside the detail popup.</div>
+                <form method="post">
+                    <input type="hidden" name="action" value="save_settings">
+                    <div class="settings-grid">
+                        <div>
+                            <label>Monthly Amount</label>
+                            <input class="form-control" type="number" step="0.01" min="0" name="monthly_amount" value="<?php echo h($settings['monthly_amount']); ?>">
+                        </div>
+                        <div>
+                            <label>Currency</label>
+                            <input class="form-control" name="currency" value="<?php echo h($settings['currency']); ?>">
+                        </div>
+                        <div>
+                            <label>JazzCash Number</label>
+                            <input class="form-control" name="jazzcash_number" value="<?php echo h($settings['jazzcash_number']); ?>">
+                        </div>
+                        <div>
+                            <label>JazzCash Account Title</label>
+                            <input class="form-control" name="jazzcash_title" value="<?php echo h($settings['jazzcash_title']); ?>">
+                        </div>
+                        <div>
+                            <label>EasyPaisa Number</label>
+                            <input class="form-control" name="easypaisa_number" value="<?php echo h($settings['easypaisa_number']); ?>">
+                        </div>
+                        <div>
+                            <label>EasyPaisa Account Title</label>
+                            <input class="form-control" name="easypaisa_title" value="<?php echo h($settings['easypaisa_title']); ?>">
+                        </div>
+                        <div>
+                            <label>Bank Name</label>
+                            <input class="form-control" name="bank_name" value="<?php echo h($settings['bank_name']); ?>">
+                        </div>
+                        <div>
+                            <label>Bank Account Title</label>
+                            <input class="form-control" name="bank_account_title" value="<?php echo h($settings['bank_account_title']); ?>">
+                        </div>
+                        <div>
+                            <label>Bank Account Number</label>
+                            <input class="form-control" name="bank_account_number" value="<?php echo h($settings['bank_account_number']); ?>">
+                        </div>
+                        <div>
+                            <label>Bank IBAN</label>
+                            <input class="form-control" name="bank_iban" value="<?php echo h($settings['bank_iban']); ?>">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label>Extra Instructions</label>
+                        <textarea class="form-control" name="payment_instructions" rows="4"><?php echo h($settings['payment_instructions']); ?></textarea>
+                    </div>
+                    <button class="sub-btn sub-btn-primary mt-3" type="submit">
+                        <i class="fa fa-save"></i> Save Payment Details
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="pd-20 card-box subscription-card mb-30">
-            <h5 class="mb-3">Sent Invoices & Requests</h5>
-            <?php if (!empty($requestRows)): ?>
-                <?php foreach ($requestRows as $row): ?>
-                    <?php
-                    $statusClass = in_array($row['status'], ['pending', 'approved', 'rejected'], true) ? $row['status'] : 'pending';
-                    $userId = intval($row['user_id']);
-                    $memberships = $membershipsByUser[$userId] ?? [];
-                    $primaryMembership = $primaryMembershipByUser[$userId] ?? null;
-                    $selectedGroupId = intval($row['group_id'] ?? 0);
-                    if ($selectedGroupId <= 0 && $primaryMembership) {
-                        $selectedGroupId = intval($primaryMembership['group_id']);
-                    }
-                    $membershipMeta = [];
-                    foreach ($memberships as $membership) {
-                        $membershipMeta[] = [
-                            'group_id' => intval($membership['group_id']),
-                            'group_name' => $membership['group_name'] ?? 'Group',
-                            'start_date' => $membership['start_date'] ?? '',
-                            'end_date' => $membership['end_date'] ?? '',
-                            'is_active' => intval($membership['is_active'] ?? 0)
-                        ];
-                    }
-                    ?>
-                    <div class="request-card <?php echo h($statusClass); ?>">
-                        <div class="row">
-                            <div class="col-md-2 mb-3">
-                                <?php if (!empty($row['screenshot_url'])): ?>
-                                    <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank">
-                                        <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="request-image">
-                                    </a>
-                                <?php else: ?>
-                                    <div class="request-image d-flex align-items-center justify-content-center text-muted">No Image</div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="col-md-5 mb-3">
-                                <div class="d-flex align-items-center mb-2" style="gap:8px;">
-                                    <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
-                                    <strong>#<?php echo intval($row['id']); ?></strong>
+        <div id="invoicesSection" class="sub-tabsection">
+            <div class="pd-20 card-box subscription-card mb-30">
+                <h5 class="mb-1">Invoices & Subscription Management</h5>
+                <div class="section-note mb-3">Each row stays compact. Open details to see notes, payment snapshot, screenshot, current group rows, and all add/increase/change-group actions.</div>
+                <form method="get">
+                    <div class="filters-grid">
+                        <input class="form-control" name="q" placeholder="User, email, invoice, method" value="<?php echo h($filters['q']); ?>">
+                        <select class="form-control" name="status">
+                            <option value="">All statuses</option>
+                            <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                            <option value="approved" <?php echo $filters['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
+                            <option value="rejected" <?php echo $filters['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                        </select>
+                    </div>
+                    <button class="sub-btn sub-btn-light mt-3" type="submit">
+                        <i class="fa fa-filter"></i> Filter Requests
+                    </button>
+                </form>
+            </div>
+
+            <div class="pd-20 card-box subscription-card mb-30">
+                <h5 class="mb-3">Sent Invoices & Requests</h5>
+                <?php if (!empty($requestRows)): ?>
+                    <div class="invoice-list">
+                        <?php foreach ($requestRows as $row): ?>
+                            <?php
+                            $statusClass = in_array($row['status'], ['pending', 'approved', 'rejected'], true) ? $row['status'] : 'pending';
+                            $userId = intval($row['user_id']);
+                            $memberships = $membershipsByUser[$userId] ?? [];
+                            $primaryMembership = $primaryMembershipByUser[$userId] ?? null;
+                            $selectedGroupId = intval($row['group_id'] ?? 0);
+                            if ($selectedGroupId <= 0 && $primaryMembership) {
+                                $selectedGroupId = intval($primaryMembership['group_id']);
+                            }
+                            $membershipMeta = [];
+                            foreach ($memberships as $membership) {
+                                $membershipMeta[] = [
+                                    'group_id' => intval($membership['group_id']),
+                                    'group_name' => $membership['group_name'] ?? 'Group',
+                                    'start_date' => $membership['start_date'] ?? '',
+                                    'end_date' => $membership['end_date'] ?? '',
+                                    'is_active' => intval($membership['is_active'] ?? 0)
+                                ];
+                            }
+                            $liveSummary = $primaryMembership
+                                ? (($primaryMembership['group_name'] ?? 'Group') . ' | ' . ($primaryMembership['end_date'] ?: '-') . ' | ' . (intval($primaryMembership['is_active'] ?? 0) === 1 ? 'Active' : 'Expired'))
+                                : 'No group row yet';
+                            $snapshotSummary = render_snapshot_summary($row['details_snapshot'] ?? '');
+                            ?>
+                            <div class="invoice-row">
+                                <div>
+                                    <?php if (!empty($row['screenshot_url'])): ?>
+                                        <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="invoice-row-thumb">
+                                    <?php else: ?>
+                                        <div class="invoice-row-thumb d-flex align-items-center justify-content-center text-muted">No Image</div>
+                                    <?php endif; ?>
                                 </div>
-                                <div><strong>User:</strong> #<?php echo $userId; ?> <?php echo h($row['username'] ?? 'Unknown'); ?></div>
-                                <div class="meta"><?php echo h($row['email'] ?? ''); ?></div>
-                                <div class="mt-2"><strong>Amount:</strong> <?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
-                                <div><strong>Method:</strong> <?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
-                                <div><strong>Requested:</strong> <?php echo h($row['created_at']); ?></div>
-                                <div><strong>Invoice:</strong> <?php echo h($row['invoice_no'] ?: 'Not generated yet'); ?></div>
-                                <div><strong>Selected Group:</strong> <?php echo h($row['group_name'] ?: 'Not selected yet'); ?></div>
-                                <?php $snapshotSummary = render_snapshot_summary($row['details_snapshot'] ?? ''); ?>
+                                <div class="invoice-row-main">
+                                    <div class="invoice-row-top">
+                                        <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
+                                        <span class="meta">#<?php echo intval($row['id']); ?></span>
+                                    </div>
+                                    <div class="invoice-row-title"><?php echo h($row['username'] ?? 'Unknown User'); ?></div>
+                                    <div class="meta">User #<?php echo $userId; ?> | <?php echo h($row['email'] ?? ''); ?></div>
+                                </div>
+                                <div class="invoice-row-summary">
+                                    <span class="invoice-row-summary-label">Amount</span>
+                                    <div class="invoice-row-summary-value"><?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
+                                    <div class="meta"><?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
+                                </div>
+                                <div class="invoice-row-summary">
+                                    <span class="invoice-row-summary-label">Invoice</span>
+                                    <div class="invoice-row-summary-value"><?php echo h($row['invoice_no'] ?: ('Request #' . intval($row['id']))); ?></div>
+                                    <div class="meta"><?php echo h($row['created_at']); ?></div>
+                                </div>
+                                <div class="invoice-row-live">
+                                    <div><strong>Live Row</strong></div>
+                                    <div><?php echo h($liveSummary); ?></div>
+                                </div>
+                                <div class="invoice-row-actions">
+                                    <button
+                                        type="button"
+                                        class="sub-btn sub-btn-primary js-view-request"
+                                        data-title="<?php echo h(($row['invoice_no'] ?: ('Request #' . intval($row['id']))) . ' - ' . ($row['username'] ?? 'Unknown')); ?>"
+                                        data-target="#requestDetailTemplate<?php echo intval($row['id']); ?>">
+                                        <i class="fa fa-eye"></i> View Details
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="requestDetailTemplate<?php echo intval($row['id']); ?>" class="sub-hidden-template">
+                                <div class="detail-grid">
+                                    <div>
+                                        <?php if (!empty($row['screenshot_url'])): ?>
+                                            <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank">
+                                                <img src="<?php echo h($row['screenshot_url']); ?>" alt="Payment screenshot" class="detail-screenshot">
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="detail-box text-muted text-center">No screenshot uploaded.</div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center flex-wrap mb-2" style="gap:8px;">
+                                            <span class="badge-soft badge-<?php echo h($statusClass); ?>"><?php echo h(strtoupper($row['status'])); ?></span>
+                                            <strong>#<?php echo intval($row['id']); ?></strong>
+                                        </div>
+                                        <div><strong>User:</strong> #<?php echo $userId; ?> <?php echo h($row['username'] ?? 'Unknown'); ?></div>
+                                        <div class="meta"><?php echo h($row['email'] ?? ''); ?></div>
+                                        <div class="mt-2"><strong>Amount:</strong> <?php echo h($row['amount']); ?> <?php echo h($row['currency']); ?></div>
+                                        <div><strong>Method:</strong> <?php echo h($row['payment_method'] ?: 'Not specified'); ?></div>
+                                        <div><strong>Requested:</strong> <?php echo h($row['created_at']); ?></div>
+                                        <div><strong>Invoice:</strong> <?php echo h($row['invoice_no'] ?: 'Not generated yet'); ?></div>
+                                        <div><strong>Selected Group:</strong> <?php echo h($row['group_name'] ?: 'Not selected yet'); ?></div>
+                                        <?php if (!empty($row['screenshot_url'])): ?>
+                                            <div class="mt-3">
+                                                <a href="<?php echo h($row['screenshot_url']); ?>" target="_blank" class="sub-btn sub-btn-light">
+                                                    <i class="fa fa-image"></i> Open Screenshot
+                                                </a>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
                                 <?php if ($snapshotSummary !== ''): ?>
-                                    <div class="meta mt-2"><strong>Payment Details Snapshot:</strong><br><?php echo nl2br(h($snapshotSummary)); ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($row['note'])): ?>
-                                    <div class="meta mt-2"><strong>User Note:</strong><br><?php echo nl2br(h($row['note'])); ?></div>
+                                    <div class="detail-box">
+                                        <div class="detail-box-title">Payment Details Snapshot</div>
+                                        <div class="meta"><?php echo nl2br(h($snapshotSummary)); ?></div>
+                                    </div>
                                 <?php endif; ?>
 
-                                <div class="membership-box">
-                                    <strong class="d-block mb-2">Current Group Subscription Rows</strong>
+                                <?php if (!empty($row['note'])): ?>
+                                    <div class="detail-box">
+                                        <div class="detail-box-title">User Note</div>
+                                        <div class="meta"><?php echo nl2br(h($row['note'])); ?></div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="detail-box">
+                                    <div class="detail-box-title">Current Group Subscription Rows</div>
                                     <?php if (!empty($memberships)): ?>
                                         <?php foreach ($memberships as $membership): ?>
-                                            <div class="membership-line">
+                                            <div class="detail-membership-line">
                                                 <?php echo h($membership['group_name'] ?? 'Group'); ?>
                                                 |
                                                 <?php echo h($membership['start_date'] ?: '-'); ?> to <?php echo h($membership['end_date'] ?: '-'); ?>
@@ -484,78 +733,106 @@ if (!empty($requestUserIds)) {
                                             </div>
                                         <?php endforeach; ?>
                                     <?php else: ?>
-                                        <div class="membership-line">No group subscription row exists yet for this user.</div>
+                                        <div class="detail-membership-line">No group subscription row exists yet for this user.</div>
                                     <?php endif; ?>
                                 </div>
-                            </div>
-                            <div class="col-md-5">
-                                <?php if ($row['status'] === 'pending'): ?>
-                                    <form method="post" action="subscription_request_action.php" class="subscription-approval-form approval-actions mb-3" data-membership-meta="<?php echo h(json_encode($membershipMeta)); ?>">
-                                        <input type="hidden" name="action" value="approve">
-                                        <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
-                                        <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
-                                        <label>Target Group For This Invoice</label>
-                                        <select class="form-control mb-2 approval-group-select" name="group_id">
-                                            <option value="0">Select group</option>
-                                            <?php foreach ($groups as $group): ?>
-                                                <option value="<?php echo intval($group['id']); ?>" <?php echo $selectedGroupId === intval($group['id']) ? 'selected' : ''; ?>>
-                                                    <?php echo h($group['group_name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div class="meta approve-state-text mb-2"></div>
-                                        <label>Admin Note</label>
-                                        <textarea class="form-control mb-2" name="admin_note" rows="3" placeholder="Optional note for approval"></textarea>
-                                        <button class="btn btn-success approve-action-btn" type="submit" <?php echo empty($groups) ? 'disabled' : ''; ?>>
-                                            <i class="fa fa-check"></i> Approve Subscription
-                                        </button>
-                                    </form>
 
-                                    <form method="post" action="subscription_request_action.php">
-                                        <input type="hidden" name="action" value="reject">
-                                        <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
-                                        <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
-                                        <label>Reject Note</label>
-                                        <textarea class="form-control mb-2" name="admin_note" rows="2" placeholder="Optional reason"></textarea>
-                                        <button class="btn btn-danger" type="submit">
-                                            <i class="fa fa-times"></i> Reject
-                                        </button>
-                                    </form>
+                                <?php if ($row['status'] === 'pending'): ?>
+                                    <div class="detail-box">
+                                        <div class="detail-box-title">Approve Subscription</div>
+                                        <form method="post" action="subscription_request_action.php" class="subscription-approval-form" data-membership-meta="<?php echo h(json_encode($membershipMeta)); ?>">
+                                            <input type="hidden" name="action" value="approve">
+                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
+                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
+                                            <label>Target Group For This Invoice</label>
+                                            <select class="form-control mb-2 approval-group-select" name="group_id">
+                                                <option value="0">Select group</option>
+                                                <?php foreach ($groups as $group): ?>
+                                                    <option value="<?php echo intval($group['id']); ?>" <?php echo $selectedGroupId === intval($group['id']) ? 'selected' : ''; ?>>
+                                                        <?php echo h($group['group_name']); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <div class="meta approve-state-text mb-2"></div>
+                                            <label>Admin Note</label>
+                                            <textarea class="form-control mb-3" name="admin_note" rows="3" placeholder="Optional note for approval"></textarea>
+                                            <button class="sub-btn sub-btn-primary approve-action-btn" type="submit" <?php echo empty($groups) ? 'disabled' : ''; ?>>
+                                                <i class="fa fa-check"></i> Approve Subscription
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <div class="detail-box">
+                                        <div class="detail-box-title">Reject Request</div>
+                                        <form method="post" action="subscription_request_action.php">
+                                            <input type="hidden" name="action" value="reject">
+                                            <input type="hidden" name="request_id" value="<?php echo intval($row['id']); ?>">
+                                            <input type="hidden" name="return_url" value="<?php echo h($currentUrl); ?>">
+                                            <label>Reject Note</label>
+                                            <textarea class="form-control mb-3" name="admin_note" rows="2" placeholder="Optional reason"></textarea>
+                                            <button class="sub-btn sub-btn-danger" type="submit">
+                                                <i class="fa fa-times"></i> Reject
+                                            </button>
+                                        </form>
+                                    </div>
                                 <?php else: ?>
-                                    <div class="approval-actions meta">
-                                        <?php if ($row['status'] === 'approved'): ?>
-                                            <div><strong>Approved:</strong> <?php echo h($row['approved_at']); ?></div>
-                                            <div><strong>Invoice Subscription:</strong> <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?></div>
-                                            <div><strong>Months Added:</strong> <?php echo intval($row['months_added']); ?></div>
-                                            <div><strong>Approved By:</strong> <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?></div>
-                                            <?php if ($primaryMembership): ?>
-                                                <div class="mt-2"><strong>Live Group Row:</strong> <?php echo h($primaryMembership['group_name'] ?? 'Group'); ?> | <?php echo h($primaryMembership['start_date'] ?: '-'); ?> to <?php echo h($primaryMembership['end_date'] ?: '-'); ?></div>
+                                    <div class="detail-box">
+                                        <div class="detail-box-title">Subscription Result</div>
+                                        <div class="meta">
+                                            <?php if ($row['status'] === 'approved'): ?>
+                                                Approved: <?php echo h($row['approved_at']); ?><br>
+                                                Invoice Subscription: <?php echo h($row['subscription_start_date']); ?> to <?php echo h($row['subscription_end_date']); ?><br>
+                                                Months Added: <?php echo intval($row['months_added']); ?><br>
+                                                Approved By: <?php echo h($row['approved_by_name'] ?: ('Admin #' . intval($row['approved_by']))); ?><br>
+                                                <?php if ($primaryMembership): ?>
+                                                    Live Group Row: <?php echo h($primaryMembership['group_name'] ?? 'Group'); ?> | <?php echo h($primaryMembership['start_date'] ?: '-'); ?> to <?php echo h($primaryMembership['end_date'] ?: '-'); ?>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                Rejected: <?php echo h($row['rejected_at']); ?>
                                             <?php endif; ?>
-                                        <?php else: ?>
-                                            <div><strong>Rejected:</strong> <?php echo h($row['rejected_at']); ?></div>
-                                        <?php endif; ?>
-                                        <?php if (!empty($row['admin_note'])): ?>
-                                            <div class="mt-2"><strong>Admin Note:</strong><br><?php echo nl2br(h($row['admin_note'])); ?></div>
-                                        <?php endif; ?>
+                                            <?php if (!empty($row['admin_note'])): ?>
+                                                <br><br>Admin Note:<br><?php echo nl2br(h($row['admin_note'])); ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 <?php endif; ?>
                             </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="text-muted">No subscription requests found.</div>
-            <?php endif; ?>
+                <?php else: ?>
+                    <div class="text-muted">No subscription requests found.</div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="invoiceDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Invoice Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
+</div>
+
 <script src="vendors/scripts/core.js"></script>
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
 <script src="vendors/scripts/layout-settings.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.subscription-approval-form').forEach(function (form) {
+function initializeApprovalForms(scope) {
+    (scope || document).querySelectorAll('.subscription-approval-form').forEach(function (form) {
+        if (form.dataset.initialized === '1') {
+            return;
+        }
+        form.dataset.initialized = '1';
+
         var select = form.querySelector('.approval-group-select');
         var button = form.querySelector('.approve-action-btn');
         var stateText = form.querySelector('.approve-state-text');
@@ -576,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!selectedGroupId || selectedGroupId === '0') {
                 button.disabled = true;
                 button.innerHTML = '<i class="fa fa-check"></i> Select Group First';
-                stateText.textContent = 'Choose the target group on this same row before approving the invoice.';
+                stateText.textContent = 'Choose the target group in this popup before approving the invoice.';
                 return;
             }
 
@@ -587,10 +864,10 @@ document.addEventListener('DOMContentLoaded', function () {
             button.disabled = false;
             if (selectedMembership) {
                 button.innerHTML = '<i class="fa fa-plus-circle"></i> Increase Date + Approve';
-                stateText.textContent = 'User is already in ' + selectedMembership.group_name + '. Approval will increase the date on that same group_members row.';
+                stateText.textContent = 'User is already in ' + selectedMembership.group_name + '. Approval will increase the date on the same group subscription row.';
             } else {
                 button.innerHTML = '<i class="fa fa-user-plus"></i> Add To Group + Approve';
-                stateText.textContent = 'User is not in this group yet. Approval will first add the user to that group and then create the one-month subscription row.';
+                stateText.textContent = 'User is not in this group yet. Approval will first add the user to the chosen group, then start the one-month subscription.';
             }
         }
 
@@ -598,6 +875,40 @@ document.addEventListener('DOMContentLoaded', function () {
             select.addEventListener('change', syncApprovalState);
             syncApprovalState();
         }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.sub-tab').forEach(function (tabButton) {
+        tabButton.addEventListener('click', function () {
+            var targetId = tabButton.dataset.subTab;
+            document.querySelectorAll('.sub-tab').forEach(function (button) {
+                button.classList.toggle('active', button === tabButton);
+            });
+            document.querySelectorAll('.sub-tabsection').forEach(function (section) {
+                section.classList.toggle('active', section.id === targetId);
+            });
+        });
+    });
+
+    initializeApprovalForms(document);
+
+    document.querySelectorAll('.js-view-request').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var targetSelector = button.dataset.target;
+            var modal = document.getElementById('invoiceDetailModal');
+            var template = targetSelector ? document.querySelector(targetSelector) : null;
+            if (!modal || !template) {
+                return;
+            }
+
+            modal.querySelector('.modal-title').textContent = button.dataset.title || 'Invoice Details';
+            modal.querySelector('.modal-body').innerHTML = template.innerHTML;
+            initializeApprovalForms(modal);
+            if (window.jQuery) {
+                window.jQuery(modal).modal('show');
+            }
+        });
     });
 });
 </script>
