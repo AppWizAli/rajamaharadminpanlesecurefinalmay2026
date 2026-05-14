@@ -360,7 +360,7 @@ if (!isset($_SESSION['admin_id'])) {
 
 <!-- Embedded Groups Section -->
 <div class="embedded-groups-section">
-<iframe src="show_groups.php" title="Groups Management" scrolling="auto"></iframe>
+<iframe src="show_groups.php?embedded=1" title="Groups Management" scrolling="auto"></iframe>
 </div>
 
 <!-- Live Video Views Statistics -->

@@ -6,6 +6,9 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit;
 }
+$isEmbedded = isset($_GET['embedded']) && $_GET['embedded'] === '1';
+$linkTarget = $isEmbedded ? ' target="_top"' : '';
+$searchAction = $isEmbedded ? 'show_groups.php?embedded=1' : '';
 // Initialize search variable
 $search = isset($_POST['search']) ? trim($_POST['search']) : '';
 // Fetch all groups, including comments
@@ -108,12 +111,28 @@ $result = $stmt->get_result();
                 padding-right: 8px;
             }
         }
+        <?php if ($isEmbedded): ?>
+        body {
+            background: transparent;
+        }
+        .embedded-groups-page {
+            padding: 0;
+        }
+        .embedded-groups-page .min-height-200px {
+            min-height: auto;
+        }
+        <?php endif; ?>
     </style>
 </head>
 <body>
+<?php if (!$isEmbedded): ?>
 <?php include "header.php"; ?>
 <div class="main-container">
     <div class="pd-ltr-20 xs-pd-20-10">
+<?php else: ?>
+<div class="embedded-groups-page">
+    <div class="pd-0">
+<?php endif; ?>
         <div class="min-height-200px">
             <div class="page-header">
                 <div class="bg-white p-4 rounded-3 border mb-4">
@@ -123,13 +142,13 @@ $result = $stmt->get_result();
                             <p class="sub-text mb-2">View, create, or manage your user groups efficiently.</p>
                             <nav aria-label="breadcrumb">
                                 <ol class="breadcrumb bg-transparent p-0 m-0">
-                                    <li class="breadcrumb-item"><a href="index.php">Dashboard</a></li>
+                                    <li class="breadcrumb-item"><a href="index.php"<?php echo $linkTarget; ?>>Dashboard</a></li>
                                     <li class="breadcrumb-item active" aria-current="page">All Groups</li>
                                 </ol>
                             </nav>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <a href="create_groups.php" class="btn btn-outline-green">
+                            <a href="create_groups.php" class="btn btn-outline-green"<?php echo $linkTarget; ?>>
                                 <i class="fas fa-users me-2 small"></i>
                                 Add Group
                             </a>
@@ -139,7 +158,7 @@ $result = $stmt->get_result();
             </div>
             <!-- Search Form -->
             <div class="search-container">
-                <form method="post" action="" class="d-flex w-100">
+                <form method="post" action="<?php echo htmlspecialchars($searchAction); ?>" class="d-flex w-100">
                     <div class="search-input-wrapper">
                         <i class="fas fa-search search-icon"></i>
                         <input type="text" name="search" class="search-input" placeholder="Search groups by name" value="<?php echo htmlspecialchars($search); ?>">
@@ -168,15 +187,15 @@ $result = $stmt->get_result();
                                 echo '<div style="display: flex; justify-content: space-between; align-items: center;">';
                                 echo '<h4 class="product-heading">' . htmlspecialchars($row["group_name"]) . '</h4>';
                                 echo '<div class="action-icons">';
-                                echo '<a href="edit_group.php?id=' . $row["id"] . '" class="action-icon edit-icon" title="Edit"><i class="fas fa-pencil-alt"></i></a>';
+                                echo '<a href="edit_group.php?id=' . $row["id"] . '" class="action-icon edit-icon" title="Edit"' . $linkTarget . '><i class="fas fa-pencil-alt"></i></a>';
                                 echo '<a href="#" class="action-icon delete-icon" title="Delete" data-group-id="' . $row["id"] . '"><i class="fas fa-trash-alt"></i></a>';
                                 echo '<a href="#" class="action-icon message-icon snd-msg" title="Message" data-group-id="' . $row["id"] . '"><i class="fas fa-comment-dots"></i></a>';
                                 echo '</div>';
                                 echo '</div>';
                                 echo '<p><strong>Comment:</strong> ' . htmlspecialchars($row["group_comment"]) . '</p>';
                                 echo '<div class="btn-group-wrap">';
-                                echo '<a href="view_group_videos.php?group_id=' . $row["id"] . '" class="btn btn-blue"><i class="fas fa-video me-1"></i>Videos</a>';
-                                echo '<a href="view_dgroups_users.php?group_id=' . $row["id"] . '" class="btn btn-blue1"><i class="fas fa-users me-1"></i>Users
+                                echo '<a href="view_group_videos.php?group_id=' . $row["id"] . '" class="btn btn-blue"' . $linkTarget . '><i class="fas fa-video me-1"></i>Videos</a>';
+                                echo '<a href="view_dgroups_users.php?group_id=' . $row["id"] . '" class="btn btn-blue1"' . $linkTarget . '><i class="fas fa-users me-1"></i>Users
                                     <span class="badge bg-light text-dark rounded-circle ms-1">' . $user_count . '</span>
                                     </a>';
                                 echo '</div>';
@@ -234,7 +253,9 @@ $result = $stmt->get_result();
         </div>
     </div>
 </div>
+<?php if (!$isEmbedded): ?>
 <div class="mobile-menu-overlay"></div>
+<?php endif; ?>
 <script src="vendors/scripts/core.js"></script>
 <script src="vendors/scripts/script.min.js"></script>
 <script src="vendors/scripts/process.js"></script>
