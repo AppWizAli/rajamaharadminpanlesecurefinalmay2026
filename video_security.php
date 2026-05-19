@@ -107,8 +107,9 @@ function resolve_video_file_path($video_path, $storage_base) {
     }
 
     $video_path = ltrim($video_path, '/');
-    if (strpos($video_path, 'uploads/') === 0) {
-        $video_path = substr($video_path, strlen('uploads/'));
+    $uploadsPos = strpos($video_path, 'uploads/');
+    if ($uploadsPos !== false) {
+        $video_path = substr($video_path, $uploadsPos + strlen('uploads/'));
     }
 
     $full = rtrim($storage_base, "/\\") . DIRECTORY_SEPARATOR . $video_path;
