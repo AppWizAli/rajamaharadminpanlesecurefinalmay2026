@@ -1,4 +1,5 @@
 <?php
+include "auth_token_check.php";
 include "config.php"; 
 header("Content-Type: application/json");
 $response = [];
@@ -9,7 +10,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($data['user_id'], $data['status'])) {
         // Update message status
-        $user_id = intval($data['user_id']);
+        $user_id = enforce_authenticated_user_match(intval($data['user_id']));
         $status = trim($data['status']);
 
         if ($user_id > 0 && $status == 1) {
@@ -30,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif (isset($data['user_id'])) {
         // Fetching messages
-        $user_id = intval($data['user_id']);
+        $user_id = enforce_authenticated_user_match(intval($data['user_id']));
 
         if ($user_id > 0) {
             // Retrieve all messages for the user

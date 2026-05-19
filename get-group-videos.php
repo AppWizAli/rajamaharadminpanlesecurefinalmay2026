@@ -5,11 +5,11 @@ header("Content-Type: application/json");
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get input data
     $input = json_decode(file_get_contents('php://input'), true);
-    $user_id = isset($input['user_id']) ? intval($input['user_id']) : 0;
+    $user_id = enforce_authenticated_user_match(isset($input['user_id']) ? intval($input['user_id']) : 0);
     $drama_id = isset($input['drama_id']) ? intval($input['drama_id']) : 0;
     $season_id = isset($input['season_id']) ? intval($input['season_id']) : 0;
     $season_number = isset($input['season_number']) ? intval($input['season_number']) : null;
-    if ($user_id > 0 && $drama_id > 0 && $season_id > 0 && $season_number !== null) {
+    if ($drama_id > 0 && $season_id > 0 && $season_number !== null) {
         try {
             // Fetch all group_ids for the user
             $today = date('Y-m-d');

@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+include "auth_token_check.php";
 include "subscription_schema.php";
 
 header("Access-Control-Allow-Origin: *");
@@ -22,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$userId = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+$userId = enforce_authenticated_user_match(isset($_POST['user_id']) ? intval($_POST['user_id']) : 0);
 $paymentMethod = trim($_POST['payment_method'] ?? '');
 $note = trim($_POST['note'] ?? '');
 

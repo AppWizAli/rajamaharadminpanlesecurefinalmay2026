@@ -72,6 +72,9 @@ function stream_remote_https_media($url, $purpose) {
                 foreach ($responseHeaders as $name => $value) {
                     header($name . ': ' . $value);
                 }
+                header('Cache-Control: private, no-store, max-age=0');
+                header('Pragma: no-cache');
+                header('Referrer-Policy: no-referrer');
                 header('X-Content-Type-Options: nosniff');
                 if ($purpose === 'download') {
                     header('Content-Disposition: attachment; filename="' . basename((string) parse_url($url, PHP_URL_PATH)) . '"');
@@ -103,6 +106,9 @@ function stream_remote_https_media($url, $purpose) {
         foreach ($responseHeaders as $name => $value) {
             header($name . ': ' . $value);
         }
+        header('Cache-Control: private, no-store, max-age=0');
+        header('Pragma: no-cache');
+        header('Referrer-Policy: no-referrer');
         header('X-Content-Type-Options: nosniff');
         if ($purpose === 'download') {
             header('Content-Disposition: attachment; filename="' . basename((string) parse_url($url, PHP_URL_PATH)) . '"');
@@ -215,6 +221,9 @@ if (ob_get_level()) {
 set_time_limit(0);
 
 header("Content-Type: $contentType");
+header('Cache-Control: private, no-store, max-age=0');
+header('Pragma: no-cache');
+header('Referrer-Policy: no-referrer');
 header("Accept-Ranges: bytes");
 header("X-Content-Type-Options: nosniff");
 if ($purpose === "download") {

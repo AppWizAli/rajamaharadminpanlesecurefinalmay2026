@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+include "auth_token_check.php";
 include "security_schema.php";
 
 header("Access-Control-Allow-Origin: *");
@@ -18,7 +19,7 @@ if (!is_array($data)) {
     $data = $_POST;
 }
 
-$user_id = isset($data['user_id']) ? intval($data['user_id']) : 0;
+$user_id = enforce_authenticated_user_match(isset($data['user_id']) ? intval($data['user_id']) : 0);
 if ($user_id <= 0) {
     echo json_encode(["status" => false, "is_blocked" => false, "message" => "Invalid user"]);
     exit;

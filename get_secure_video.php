@@ -11,11 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_input();
-$user_id = isset($input['user_id']) ? intval($input['user_id']) : 0;
+$user_id = enforce_authenticated_user_match(isset($input['user_id']) ? intval($input['user_id']) : 0);
 $video_id = isset($input['video_id']) ? intval($input['video_id']) : 0;
 $purpose = isset($input['purpose']) ? trim($input['purpose']) : "playback";
 
-if ($user_id <= 0 || $video_id <= 0) {
+if ($video_id <= 0) {
     echo json_encode(["status" => false, "message" => "Invalid user_id or video_id."]);
     exit;
 }

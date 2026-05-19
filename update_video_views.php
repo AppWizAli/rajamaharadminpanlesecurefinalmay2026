@@ -6,6 +6,7 @@ header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 // Include database configuration
 include "config.php";
+include "auth_token_check.php";
 // Consistent response model
 function sendResponse($status, $message, $data = null) {
     echo json_encode([
@@ -26,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Get and validate input
 $input = json_decode(file_get_contents('php://input'), true);
 $video_id = isset($input['id']) ? intval($input['id']) : null;
-$user_id = isset($input['user_id']) ? intval($input['user_id']) : null;
+$user_id = enforce_authenticated_user_match(isset($input['user_id']) ? intval($input['user_id']) : 0);
 if (!$video_id || $video_id <= 0 || !$user_id || $user_id <= 0) {
     sendResponse('error', 'Invalid or missing video ID or user ID', null);
 }

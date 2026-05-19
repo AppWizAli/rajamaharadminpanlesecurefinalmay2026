@@ -9,12 +9,12 @@ header('Content-Type: application/json');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-$user_id = isset($data['user_id']) ? $data['user_id'] : null;
+$user_id = enforce_authenticated_user_match(isset($data['user_id']) ? intval($data['user_id']) : 0);
 $season_id = isset($data['season_id']) ? intval($data['season_id']) : null;
 $drama_id = isset($data['drama_id']) ? intval($data['drama_id']) : null;
 $season_number = isset($data['season_number']) ? intval($data['season_number']) : null;
 
-if ($user_id === null || $season_id === null || $drama_id === null || $season_number === null) {
+if ($season_id === null || $drama_id === null || $season_number === null) {
     http_response_code(400);
     echo json_encode([
         "error" => "All parameters (user_id, season_id, drama_id, season_number) are required"
@@ -52,7 +52,7 @@ try {
         throw new Exception("Prepare failed: " . $conn->error);
     }
 
-    $stmt->bind_param("siii", $user_id, $season_id, $drama_id, $season_number);
+    $stmt->bind_param("iiii", $user_id, $season_id, $drama_id, $season_number);
     
     if (!$stmt->execute()) {
         throw new Exception("Execute failed: " . $stmt->error);

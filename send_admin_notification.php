@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-$user_id = isset($input['user_id']) ? intval($input['user_id']) : 0;
-$username = isset($input['username']) ? trim($input['username']) : '';
+$user_id = enforce_authenticated_user_match(isset($input['user_id']) ? intval($input['user_id']) : 0);
+$username = '';
 $message = isset($input['message']) ? trim($input['message']) : '';
 
 if ($user_id <= 0 || $message === '') {
@@ -22,6 +22,17 @@ if ($user_id <= 0 || $message === '') {
 if (empty($FCM_SERVER_KEY)) {
     echo json_encode(["status" => false, "message" => "FCM server key not configured."]);
     exit;
+}
+
+$userStmt = $conn->prepare("SELECT username FROM users WHERE id = ? LIMIT 1");
+if ($userStmt) {
+    $userStmt->bind_param("i", $user_id);
+    $userStmt->execute();
+    $userStmt->bind_result($dbUsername);
+    if ($userStmt->fetch()) {
+        $username = trim((string) $dbUsername);
+    }
+    $userStmt->close();
 }
 
 $payload = [

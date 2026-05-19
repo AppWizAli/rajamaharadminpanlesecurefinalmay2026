@@ -15,8 +15,8 @@ $conn->set_charset("utf8mb4");
 // =========================
 // Secure Video Configuration
 // =========================
-// IMPORTANT: Change this to a long random string in production.
-$VIDEO_SIGN_SECRET = "v1_9e9b9d61b75a4b74a0f2c8b0d7a3e6f8f07b9a2d7f4c1b3e8a6d0c2b5f9a1c7e";
+// IMPORTANT: Set this via environment variable in production and rotate it if the repo was ever shared.
+$VIDEO_SIGN_SECRET = getenv('VIDEO_SIGN_SECRET') ?: "v1_9e9b9d61b75a4b74a0f2c8b0d7a3e6f8f07b9a2d7f4c1b3e8a6d0c2b5f9a1c7e";
 
 // Signed URL TTLs (seconds)
 $VIDEO_SIGN_TTL_PLAYBACK = 1200; // 20 minutes
@@ -28,13 +28,15 @@ $VIDEO_STORAGE_BASE = __DIR__ . "/uploads";
 
 // If your admin UI still stores encrypted video_path, set the same key here.
 // This matches the CryptoJS key currently used in add/edit episode pages.
-$VIDEO_URL_ENCRYPTION_KEY = "MySecureKey32CharactersLongasdfg";
+$VIDEO_URL_ENCRYPTION_KEY = getenv('VIDEO_URL_ENCRYPTION_KEY') ?: "MySecureKey32CharactersLongasdfg";
 
 // =========================
 // API Auth Configuration
 // =========================
-// Token signing secret for API auth.
-$API_AUTH_SECRET = "v1_c7b2a4e9f6d1c8b3a5f0e7d9b2c6a1f4e8d0c3b5a9f7e2c4b6d1a8f3c7b9e0";
+// Public-token validation secret for API auth.
+$API_AUTH_SECRET = getenv('API_AUTH_SECRET') ?: "v1_c7b2a4e9f6d1c8b3a5f0e7d9b2c6a1f4e8d0c3b5a9f7e2c4b6d1a8f3c7b9e0";
+$API_TOKEN_SIGNING_SECRET = getenv('API_TOKEN_SIGNING_SECRET') ?: $API_AUTH_SECRET;
+$PUBLIC_READ_TOKEN = getenv('PUBLIC_READ_TOKEN') ?: $API_AUTH_SECRET;
 
 // =========================
 // Admin Push Notifications

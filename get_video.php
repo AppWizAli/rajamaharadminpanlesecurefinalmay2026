@@ -4,7 +4,7 @@ include "auth_token_check.php";
 header("Content-Type: application/json");
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    $user_id = isset($input['user_id']) ? intval($input['user_id']) : 0;
+    $user_id = enforce_authenticated_user_match(isset($input['user_id']) ? intval($input['user_id']) : 0);
     if ($user_id > 0) {
         try {
             // Fetch all group_ids for the user

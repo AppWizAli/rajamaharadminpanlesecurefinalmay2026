@@ -5,12 +5,12 @@ include "config.php";
 header('Content-Type: application/json');
 
 if (isset($_GET['user_id'], $_GET['video_id'])) {
-    $user_id = intval($_GET['user_id']);
+    $user_id = enforce_authenticated_user_match(intval($_GET['user_id']));
     $video_id = intval($_GET['video_id']);
     $today = date('Y-m-d');
     
     // Validate parameters
-    if ($user_id <= 0 || $video_id <= 0) {
+    if ($video_id <= 0) {
         echo json_encode([
             "status" => false,
             "message" => "Invalid user_id or video_id - must be positive numbers"

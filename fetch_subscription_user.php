@@ -9,7 +9,7 @@ if (!isset($_GET['user_id'])) {
     exit;
 }
 
-$user_id = intval($_GET['user_id']);
+$user_id = enforce_authenticated_user_match(intval($_GET['user_id']));
 $today = date('Y-m-d');
 
 $status = true;

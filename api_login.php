@@ -1,6 +1,7 @@
 <?php
 // Include your database connection file (config.php or similar)
 include "config.php";
+include "api_request_security.php";
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -20,9 +21,22 @@ $data = json_decode($input, true);
 
 // Check if the request method is POST and data is not empty
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($data)) {
-    $email = isset($data['email']) ? $data['email'] : '';
+    $email = api_security_normalize_email($data['email'] ?? '');
     $password = isset($data['password']) ? $data['password'] : '';
     $device_token = isset($data['device_token']) ? $data['device_token'] : '';
+
+    $validationMessage = '';
+    if (!api_security_validate_email($email, $validationMessage)) {
+        api_security_json_error($validationMessage, 400);
+    }
+
+    api_security_throttle_or_fail(
+        'login-ip-email',
+        api_security_client_ip() . '|' . $email,
+        12,
+        15 * 60,
+        "Too many login attempts. Please wait a little and try again."
+    );
 
     // Validate the inputs
     if (!empty($email) && !empty($password)) {
@@ -58,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($data)) {
                         "device_token" => $device_token
                     ];
                     $exp = time() + (30 * 24 * 60 * 60);
-$token = base64_encode($id . '|' . $exp . '|' . hash_hmac('sha256', $id . '|' . $exp, $API_AUTH_SECRET));
+$tokenSecret = $API_TOKEN_SIGNING_SECRET ?? $API_AUTH_SECRET;
+$token = base64_encode($id . '|' . $exp . '|' . hash_hmac('sha256', $id . '|' . $exp, $tokenSecret));
 echo json_encode([
     "message" => "Login successful",
     "user_data" => $user_data,
@@ -66,21 +81,21 @@ echo json_encode([
     "accessToken" => $token
 ]);
                 } else {
-                    echo json_encode(["error" => "Failed to update logged number and device token"]);
+                    api_security_json_error("Failed to update logged number and device token", 500);
                 }
                 $update_stmt->close();
             } else {
-                echo json_encode(["error" => "Invalid email or password"]);
+                api_security_json_error("Invalid email or password", 401);
             }
         } else {
-            echo json_encode(["error" => "User not found"]);
+            api_security_json_error("Invalid email or password", 401);
         }
         $stmt->close();
     } else {
-        echo json_encode(["error" => "Email and password are required"]);
+        api_security_json_error("Email and password are required", 400);
     }
 } else {
-    echo json_encode(["error" => "Invalid request method or empty input"]);
+    api_security_json_error("Invalid request method or empty input", 405);
 }
 
 // Close database connection

@@ -1,6 +1,7 @@
 <?php
 // Include your database connection file (config.php or similar)
 include "config.php";
+include "auth_token_check.php";
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
@@ -23,7 +24,7 @@ file_put_contents('php://stderr', "Decoded data: " . print_r($data, true) . "\n"
 
 // Check if the request method is POST and data is not empty
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($data)) {
-    $user_id = isset($data['id']) ? $data['id'] : '';
+    $user_id = enforce_authenticated_user_match(isset($data['id']) ? intval($data['id']) : 0);
 
     // Validate the input
     if (!empty($user_id)) {

@@ -1,5 +1,6 @@
 <?php
 include "config.php";
+include "auth_token_check.php";
 include "subscription_schema.php";
 
 header("Access-Control-Allow-Origin: *");
@@ -14,7 +15,7 @@ if (!empty($schemaStatus['message'])) {
     exit;
 }
 
-$userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+$userId = enforce_authenticated_user_match(isset($_GET['user_id']) ? intval($_GET['user_id']) : 0);
 if ($userId <= 0) {
     echo json_encode([
         "status" => false,
