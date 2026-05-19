@@ -23,6 +23,10 @@ function media_public_base_url() {
     return $scheme . "://" . $host . ($dir !== '' ? $dir : '');
 }
 
+function media_current_host() {
+    return strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+}
+
 function media_to_client_url($value) {
     $value = trim((string) $value);
     if ($value === '') {
@@ -95,7 +99,7 @@ function media_validate_relative_path($value, array $allowedExtensions, $label) 
     return ltrim(str_replace('\\', '/', $value), '/');
 }
 
-function media_store_uploaded_file(array $file, $relativeDirectory, array $allowedExtensions, $prefix, $label) {
+function media_store_uploaded_file(array $file, $relativeDirectory, array $allowedExtensions, $prefix, $label, $storeRelativePath = false) {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return '';
     }
@@ -151,12 +155,11 @@ function media_store_uploaded_file(array $file, $relativeDirectory, array $allow
         throw new RuntimeException("Could not save uploaded {$label}. Please check server disk space and folder permissions.");
     }
 
-    return media_to_client_url(
-        media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName)
-    );
+    $relativePublicPath = media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName);
+    return $storeRelativePath ? $relativePublicPath : media_to_client_url($relativePublicPath);
 }
 
-function media_store_staged_upload($uploadToken, $stagedPurpose, $relativeDirectory, array $allowedExtensions, $prefix, $label) {
+function media_store_staged_upload($uploadToken, $stagedPurpose, $relativeDirectory, array $allowedExtensions, $prefix, $label, $storeRelativePath = false) {
     $uploadToken = trim((string) $uploadToken);
     if ($uploadToken === '') {
         return '';
@@ -191,9 +194,8 @@ function media_store_staged_upload($uploadToken, $stagedPurpose, $relativeDirect
         throw new RuntimeException("Could not save uploaded {$label}. Please check server disk space and folder permissions.");
     }
 
-    return media_to_client_url(
-        media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName)
-    );
+    $relativePublicPath = media_public_path(trim($relativeDirectory, "/\\") . '/' . $generatedName);
+    return $storeRelativePath ? $relativePublicPath : media_to_client_url($relativePublicPath);
 }
 
 function resolve_media_value(array $file, $textValue, array $options) {
@@ -207,8 +209,9 @@ function resolve_media_value(array $file, $textValue, array $options) {
     $allowRelative = $options['allowRelative'] ?? true;
     $required = $options['required'] ?? false;
     $existingValue = trim((string) ($options['existingValue'] ?? ''));
+    $storeRelativePath = $options['storeRelativePath'] ?? false;
 
-    $uploadedValue = media_store_uploaded_file($file, $relativeDirectory, $allowedExtensions, $prefix, $label);
+    $uploadedValue = media_store_uploaded_file($file, $relativeDirectory, $allowedExtensions, $prefix, $label, $storeRelativePath);
     if ($uploadedValue !== '') {
         return $uploadedValue;
     }
@@ -220,7 +223,8 @@ function resolve_media_value(array $file, $textValue, array $options) {
             $relativeDirectory,
             $allowedExtensions,
             $prefix,
-            $label
+            $label,
+            $storeRelativePath
         );
         if ($stagedValue !== '') {
             return $stagedValue;
@@ -229,6 +233,13 @@ function resolve_media_value(array $file, $textValue, array $options) {
 
     $textValue = trim((string) $textValue);
     if ($textValue !== '') {
+        if ($allowRelative) {
+            $localUploadPath = media_extract_local_upload_relative_path($textValue);
+            if ($localUploadPath !== null) {
+                return media_validate_relative_path($localUploadPath, $allowedExtensions, $label);
+            }
+        }
+
         if ($allowRemote && media_is_url($textValue)) {
             return media_validate_remote_url($textValue, $allowedExtensions, $label);
         }
@@ -258,6 +269,36 @@ function media_is_local_managed_video($value) {
 
     $normalized = ltrim(str_replace('\\', '/', trim($value)), '/');
     return strpos($normalized, 'uploads/videos/') === 0;
+}
+
+function media_extract_local_upload_relative_path($value) {
+    $value = trim((string) $value);
+    if ($value === '') {
+        return null;
+    }
+
+    if (media_is_url($value)) {
+        $host = strtolower((string) parse_url($value, PHP_URL_HOST));
+        $currentHost = media_current_host();
+        if ($host === '' || $currentHost === '' || $host !== $currentHost) {
+            return null;
+        }
+
+        $path = (string) parse_url($value, PHP_URL_PATH);
+        if ($path === '') {
+            return null;
+        }
+        $normalized = ltrim(str_replace('\\', '/', $path), '/');
+    } else {
+        $normalized = ltrim(str_replace('\\', '/', $value), '/');
+    }
+
+    $uploadsPos = strpos($normalized, 'uploads/');
+    if ($uploadsPos === false) {
+        return null;
+    }
+
+    return substr($normalized, $uploadsPos);
 }
 
 function enforce_secure_video_policy($videoPath, $privacy, $downloadAccess) {

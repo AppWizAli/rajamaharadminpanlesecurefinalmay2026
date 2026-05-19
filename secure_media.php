@@ -62,7 +62,12 @@ if ($purpose === "download" && $download_access === "never") {
 $video_path = $row['video_path'] ?? '';
 $video_path = decrypt_video_path_if_needed($video_path, $VIDEO_URL_ENCRYPTION_KEY);
 
-if (preg_match('#^https?://#i', $video_path)) {
+$file = resolve_video_file_path($video_path, $VIDEO_STORAGE_BASE);
+if ($file === null || !is_file($file)) {
+    $file = null;
+}
+
+if ($file === null && preg_match('#^https?://#i', $video_path)) {
     if (stripos($video_path, 'https://') !== 0) {
         http_response_code(403);
         echo "Only HTTPS external playback links are allowed.";
@@ -76,8 +81,7 @@ if (preg_match('#^https?://#i', $video_path)) {
     exit;
 }
 
-$file = resolve_video_file_path($video_path, $VIDEO_STORAGE_BASE);
-if ($file === null || !is_file($file)) {
+if ($file === null) {
     http_response_code(404);
     echo "File not found.";
     exit;
@@ -100,6 +104,9 @@ set_time_limit(0);
 header("Content-Type: $contentType");
 header("Accept-Ranges: bytes");
 header("X-Content-Type-Options: nosniff");
+if ($purpose === "download") {
+    header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+}
 
 $start = 0;
 $end = $size - 1;

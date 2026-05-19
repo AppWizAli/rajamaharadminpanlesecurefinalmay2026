@@ -77,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'prefix' => 'episode_video',
                 'stagedUploadToken' => $_POST['video_upload_token'] ?? '',
                 'stagedUploadPurpose' => 'episode_video',
+                'storeRelativePath' => true,
                 'required' => true
             ]
         );

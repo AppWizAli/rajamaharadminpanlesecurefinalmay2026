@@ -44,6 +44,9 @@ $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 $contentType = "video/mp4";
 if ($ext === "mkv") $contentType = "video/x-matroska";
 if ($ext === "webm") $contentType = "video/webm";
+if ($ext === "m3u8") $contentType = "application/vnd.apple.mpegurl";
+if ($ext === "mov") $contentType = "video/quicktime";
+if ($ext === "ts") $contentType = "video/mp2t";
 
 if (ob_get_level()) {
     ob_end_clean();

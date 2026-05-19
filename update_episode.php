@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'relativeDirectory' => 'uploads/videos',
                 'allowedExtensions' => ['mp4', 'm3u8', 'mkv', 'webm', 'mov', 'ts'],
                 'prefix' => 'episode_video',
+                'storeRelativePath' => true,
                 'required' => false
             ]
         );

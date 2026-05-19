@@ -58,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_update'])) {
                 'relativeDirectory' => 'uploads/videos',
                 'allowedExtensions' => ['mp4', 'm3u8', 'mkv', 'webm', 'mov', 'ts'],
                 'prefix' => 'episode_video',
+                'storeRelativePath' => true,
                 'required' => true,
                 'existingValue' => decrypt_video_path_if_needed($currentMedia['video_path'] ?? '', $VIDEO_URL_ENCRYPTION_KEY)
             ]
