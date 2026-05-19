@@ -2,6 +2,115 @@
 include "config.php";
 include "video_security.php";
 
+function remote_media_extension($url) {
+    $path = (string) parse_url($url, PHP_URL_PATH);
+    return strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+}
+
+function stream_remote_https_media($url, $purpose) {
+    if (!function_exists('curl_init')) {
+        http_response_code(502);
+        echo "Remote media streaming is not available on this server.";
+        exit;
+    }
+
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    ignore_user_abort(true);
+    set_time_limit(0);
+
+    $rangeHeader = isset($_SERVER['HTTP_RANGE']) ? trim((string) $_SERVER['HTTP_RANGE']) : '';
+    $responseHeaders = [];
+    $statusCode = 200;
+    $headersSent = false;
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_RETURNTRANSFER => false,
+        CURLOPT_FAILONERROR => false,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_CONNECTTIMEOUT => 20,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_BUFFERSIZE => 1024 * 1024,
+        CURLOPT_USERAGENT => 'UrduBoloSecureMedia/1.0',
+        CURLOPT_HTTPHEADER => $rangeHeader !== '' ? ["Range: $rangeHeader"] : [],
+        CURLOPT_HEADERFUNCTION => function ($curl, $headerLine) use (&$responseHeaders, &$statusCode) {
+            $length = strlen($headerLine);
+            $trimmed = trim($headerLine);
+
+            if ($trimmed === '') {
+                return $length;
+            }
+
+            if (stripos($trimmed, 'HTTP/') === 0) {
+                $responseHeaders = [];
+                $parts = preg_split('/\s+/', $trimmed);
+                $statusCode = isset($parts[1]) ? intval($parts[1]) : 200;
+                return $length;
+            }
+
+            $separatorPos = strpos($headerLine, ':');
+            if ($separatorPos === false) {
+                return $length;
+            }
+
+            $name = strtolower(trim(substr($headerLine, 0, $separatorPos)));
+            $value = trim(substr($headerLine, $separatorPos + 1));
+            if (in_array($name, ['content-type', 'content-length', 'content-range', 'accept-ranges'], true)) {
+                $responseHeaders[$name] = $value;
+            }
+
+            return $length;
+        },
+        CURLOPT_WRITEFUNCTION => function ($curl, $chunk) use (&$headersSent, &$responseHeaders, &$statusCode, $purpose, $url) {
+            if (!$headersSent) {
+                http_response_code($statusCode > 0 ? $statusCode : 200);
+                foreach ($responseHeaders as $name => $value) {
+                    header($name . ': ' . $value);
+                }
+                header('X-Content-Type-Options: nosniff');
+                if ($purpose === 'download') {
+                    header('Content-Disposition: attachment; filename="' . basename((string) parse_url($url, PHP_URL_PATH)) . '"');
+                }
+                $headersSent = true;
+            }
+
+            echo $chunk;
+            flush();
+            return strlen($chunk);
+        }
+    ]);
+
+    $success = curl_exec($ch);
+    if ($success === false) {
+        $error = curl_error($ch);
+        curl_close($ch);
+        if (!$headersSent) {
+            http_response_code(502);
+            echo "Remote media request failed: " . $error;
+        }
+        exit;
+    }
+
+    curl_close($ch);
+
+    if (!$headersSent) {
+        http_response_code($statusCode > 0 ? $statusCode : 200);
+        foreach ($responseHeaders as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('X-Content-Type-Options: nosniff');
+        if ($purpose === 'download') {
+            header('Content-Disposition: attachment; filename="' . basename((string) parse_url($url, PHP_URL_PATH)) . '"');
+        }
+    }
+    exit;
+}
+
 $video_id = isset($_GET['video_id']) ? intval($_GET['video_id']) : 0;
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 $exp = isset($_GET['exp']) ? intval($_GET['exp']) : 0;
@@ -72,6 +181,10 @@ if ($file === null && preg_match('#^https?://#i', $video_path)) {
         http_response_code(403);
         echo "Only HTTPS external playback links are allowed.";
         exit;
+    }
+
+    if (remote_media_extension($video_path) !== 'm3u8') {
+        stream_remote_https_media($video_path, $purpose);
     }
 
     header('Cache-Control: private, no-store, max-age=0');
