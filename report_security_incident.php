@@ -50,8 +50,8 @@ if (in_array(strtolower($incident_type), $ignoredTypes, true)) {
     exit;
 }
 
-$criticalTypes = ['screen_recording', 'screen_capture', 'root_device', 'usb_connection_detected', 'debugger_detected', 'tamper_detected'];
-$warningTypes = ['player_error', 'download_denied', 'location_permission_denied', 'app_block_check_failed'];
+$criticalTypes = ['screen_recording', 'screen_capture', 'root_device', 'usb_connection_detected', 'debugger_detected', 'tamper_detected', 'uncaught_exception'];
+$warningTypes = ['player_error', 'offline_player_error', 'download_denied', 'location_permission_denied', 'app_block_check_failed', 'caught_exception', 'network_error'];
 $severity = 'info';
 if (in_array(strtolower($incident_type), $criticalTypes, true)) {
     $severity = 'critical';
