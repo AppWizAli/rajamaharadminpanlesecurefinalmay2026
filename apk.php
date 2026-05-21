@@ -46,7 +46,14 @@ function read_apk_badging($apkPath) {
     return $meta;
 }
 
-if ($_SERVER["REQUEST_METHOD"] !== "POST" || !isset($_POST['upload_apk'])) {
+if (
+    $_SERVER["REQUEST_METHOD"] !== "POST" ||
+    (
+        !isset($_POST['upload_apk']) &&
+        trim((string) ($_POST['apk_upload_token'] ?? '')) === '' &&
+        !isset($_FILES['apk_file'])
+    )
+) {
     redirect_with_message('error', 'Invalid APK upload request.');
 }
 

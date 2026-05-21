@@ -323,6 +323,7 @@ $history = $conn->query("SELECT * FROM apk_files ORDER BY created_at DESC LIMIT 
                 var finalFormData = new FormData(form);
                 finalFormData.delete('apk_file');
                 finalFormData.append('apk_upload_token', chunkUpload.uploadId);
+                finalFormData.append('upload_apk', '1');
 
                 await window.ResumablePanelUpload.postFormWithRetry({
                     url: form.action,
