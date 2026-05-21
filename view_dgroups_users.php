@@ -330,6 +330,9 @@ body {
                             <span class="selected-count" id="selectedCount">0 users selected</span>
                         </div>
                         <div>
+                            <button type="button" class="btn btn-primary me-2" id="bulkMoveBtn">
+                                <i class="fas fa-exchange-alt"></i> Move Selected Users
+                            </button>
                             <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
                                 <i class="fas fa-trash-alt"></i> Delete Selected Users
                             </button>
@@ -610,6 +613,41 @@ body {
         </div>
     </div>
 
+    <!-- Bulk Move Modal -->
+    <div class="modal fade" id="bulkMoveModal" tabindex="-1" aria-labelledby="bulkMoveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="bulkMoveModalLabel">Move Selected Users</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Selected users will keep their current comment and subscription dates. Only the group will change.</p>
+                    <div class="form-group">
+                        <label for="target_group_id">Select Target Group</label>
+                        <select id="target_group_id" class="form-control" required>
+                            <option value="">Choose another group</option>
+                            <?php while ($group = $groups_result->fetch_assoc()) { ?>
+                                <?php if (intval($group['id']) !== $group_id) { ?>
+                                    <option value="<?php echo intval($group['id']); ?>">
+                                        <?php echo htmlspecialchars($group['group_name']); ?>
+                                    </option>
+                                <?php } ?>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        Users already present in the target group will be skipped.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmBulkMoveBtn" class="btn btn-primary">Move Users</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirmation Modal -->
     <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -691,6 +729,13 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
             // Bulk Selection Functionality
             let selectedUsers = [];
 
+            window.resetGroupUserBulkSelection = function() {
+                selectedUsers = [];
+                $('#selectAll').prop('checked', false);
+                $('.user-checkbox').prop('checked', false);
+                updateBulkActionsBar();
+            };
+
             // Update selected count and show/hide bulk actions bar
             function updateBulkActionsBar() {
                 const count = selectedUsers.length;
@@ -726,9 +771,17 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                 const groupId = $(this).data('group-id');
                 
                 if ($(this).is(':checked')) {
-                    selectedUsers.push({ user_id: userId, group_id: groupId });
+                    const alreadySelected = selectedUsers.some(function(user) {
+                        return String(user.user_id) === String(userId) && String(user.group_id) === String(groupId);
+                    });
+
+                    if (!alreadySelected) {
+                        selectedUsers.push({ user_id: userId, group_id: groupId });
+                    }
                 } else {
-                    selectedUsers = selectedUsers.filter(u => u.user_id !== userId);
+                    selectedUsers = selectedUsers.filter(function(user) {
+                        return !(String(user.user_id) === String(userId) && String(user.group_id) === String(groupId));
+                    });
                     $('#selectAll').prop('checked', false);
                 }
                 
@@ -738,6 +791,61 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                 $('#selectAll').prop('checked', totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0);
                 
                 updateBulkActionsBar();
+            });
+
+            // Bulk Move Button
+            $('#bulkMoveBtn').on('click', function() {
+                if (selectedUsers.length === 0) {
+                    alert('Please select at least one user to move.');
+                    return;
+                }
+
+                $('#target_group_id').val('');
+                $('#bulkMoveModal').modal('show');
+            });
+
+            // Confirm Bulk Move
+            $('#confirmBulkMoveBtn').on('click', function() {
+                const button = $(this);
+                const targetGroupId = $('#target_group_id').val();
+
+                if (!targetGroupId) {
+                    alert('Please select the target group.');
+                    return;
+                }
+
+                button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Moving...');
+
+                $.ajax({
+                    url: 'bulk_move_users.php',
+                    method: 'POST',
+                    data: JSON.stringify({
+                        users: selectedUsers,
+                        target_group_id: targetGroupId
+                    }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        const res = typeof response === 'string' ? JSON.parse(response) : response;
+                        let message = res.message;
+
+                        if (res.errors && res.errors.length > 0) {
+                            message += '\n\n' + res.errors.join('\n');
+                        }
+
+                        if (res.status === 'success' || res.status === 'partial') {
+                            alert(message);
+                            $('#bulkMoveModal').modal('hide');
+                            location.reload();
+                        } else {
+                            alert('Error: ' + message);
+                            button.prop('disabled', false).html('Move Users');
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred while moving users.');
+                        button.prop('disabled', false).html('Move Users');
+                    }
+                });
             });
 
             // Bulk Delete Button
@@ -762,7 +870,7 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                     data: JSON.stringify({ users: selectedUsers }),
                     contentType: 'application/json',
                     success: function(response) {
-                        const res = JSON.parse(response);
+                        const res = typeof response === 'string' ? JSON.parse(response) : response;
                         if (res.status === 'success') {
                             alert(res.message);
                             $('#bulkDeleteModal').modal('hide');
@@ -777,6 +885,11 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                         button.prop('disabled', false).html('Delete Users');
                     }
                 });
+            });
+
+            $('#bulkMoveModal, #bulkDeleteModal').on('hidden.bs.modal', function() {
+                $('#confirmBulkMoveBtn').prop('disabled', false).html('Move Users');
+                $('#confirmBulkDeleteBtn').prop('disabled', false).html('Delete Users');
             });
         });
     </script>
@@ -847,17 +960,9 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
 
     <script>
         function loadGroupUsers(groupId) {
-            var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?group_id=' + groupId;
-            window.history.pushState({ path: newUrl }, '', newUrl);
-            
-            $.ajax({
-                url: 'fetch_dgroup_users.php',
-                type: 'GET',
-                data: { group_id: groupId },
-                success: function(response) {
-                    $('#group-users-table tbody').html(response);
-                }
-            });
+            const url = new URL(window.location.href);
+            url.searchParams.set('group_id', groupId);
+            window.location.href = url.toString();
         }
     </script>
 
@@ -995,6 +1100,9 @@ if(window.location.search.includes('embedded=1') || window !== window.parent) {
                     data: { group_id: groupId, search: search },
                     success: function(response) {
                         $('#group-users-table tbody').html(response);
+                        if (typeof window.resetGroupUserBulkSelection === 'function') {
+                            window.resetGroupUserBulkSelection();
+                        }
                         if ($('.d-block.d-lg-none').length > 0) {
                             updateMobileView(search, groupId);
                         }
