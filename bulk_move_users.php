@@ -62,19 +62,47 @@ $errors = [];
 $conn->begin_transaction();
 
 try {
+    $sourceMembershipStmt = $conn->prepare("
+        SELECT id
+        FROM group_members
+        WHERE user_id = ? AND group_id = ?
+        LIMIT 1
+    ");
     $checkTargetStmt = $conn->prepare("
         SELECT id
         FROM group_members
         WHERE user_id = ? AND group_id = ?
         LIMIT 1
     ");
-    $moveStmt = $conn->prepare("
-        UPDATE group_members
-        SET group_id = ?, updated_at = NOW()
-        WHERE user_id = ? AND group_id = ?
+    $insertTargetStmt = $conn->prepare("
+        INSERT INTO group_members (
+            group_id,
+            user_id,
+            comment,
+            subscription,
+            start_date,
+            end_date,
+            created_at,
+            updated_at
+        )
+        SELECT
+            ?,
+            user_id,
+            comment,
+            subscription,
+            start_date,
+            end_date,
+            created_at,
+            updated_at
+        FROM group_members
+        WHERE id = ?
+    ");
+    $deleteSourceStmt = $conn->prepare("
+        DELETE FROM group_members
+        WHERE id = ?
     ");
 
-    if (!$checkTargetStmt || !$moveStmt) {
+    if (!$sourceMembershipStmt || !$checkTargetStmt || !$insertTargetStmt || !$deleteSourceStmt) {
         throw new Exception('Failed to prepare bulk move statements');
     }
 
@@ -102,17 +130,37 @@ try {
             continue;
         }
 
-        $moveStmt->bind_param("iii", $targetGroupId, $userId, $sourceGroupId);
-        if ($moveStmt->execute() && $moveStmt->affected_rows > 0) {
+        $sourceMembershipStmt->bind_param("ii", $userId, $sourceGroupId);
+        $sourceMembershipStmt->execute();
+        $sourceMembership = $sourceMembershipStmt->get_result()->fetch_assoc();
+
+        if (!$sourceMembership) {
+            $failedCount++;
+            $errors[] = "User ID {$userId} source membership was not found";
+            continue;
+        }
+
+        $sourceMembershipId = intval($sourceMembership['id'] ?? 0);
+        $insertTargetStmt->bind_param("ii", $targetGroupId, $sourceMembershipId);
+
+        if (!$insertTargetStmt->execute() || $insertTargetStmt->affected_rows <= 0) {
+            $failedCount++;
+            $errors[] = "User ID {$userId} could not be copied to target group";
+            continue;
+        }
+
+        $deleteSourceStmt->bind_param("i", $sourceMembershipId);
+        if ($sourceMembershipId > 0 && $deleteSourceStmt->execute() && $deleteSourceStmt->affected_rows > 0) {
             $movedCount++;
         } else {
-            $failedCount++;
-            $errors[] = "User ID {$userId} could not be moved";
+            throw new Exception("User ID {$userId} was copied but old membership could not be removed");
         }
     }
 
+    $sourceMembershipStmt->close();
     $checkTargetStmt->close();
-    $moveStmt->close();
+    $insertTargetStmt->close();
+    $deleteSourceStmt->close();
 
     $conn->commit();
 
