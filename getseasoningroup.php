@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['darama_id'])) {
     $result = $stmt->get_result();
 
     $options = '<option value="">Select Season</option>';
+    $options .= '<option value="-1">All Seasons</option>';
     while ($row = $result->fetch_assoc()) {
         $options .= '<option value="' . $row['id'] . '">Season ' . $row['season_number'] . '</option>';
     }

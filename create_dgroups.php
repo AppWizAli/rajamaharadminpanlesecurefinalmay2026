@@ -265,6 +265,9 @@ $dramas = $conn->query("SELECT * FROM drama");
 
                 <div class="card-body">
                     <form method="post" action="add_video.php">
+                        <input type="hidden" name="return_to" value="create_dgroups.php">
+                        <input type="hidden" id="assign_all_dramas" name="assign_all_dramas" value="0">
+                        <input type="hidden" id="assign_all_seasons" name="assign_all_seasons" value="0">
                         <div class="form-group">
                             <label for="group_id">Select Group:</label>
                             <select id="group_id" name="group_id" class="form-control" required>
@@ -277,6 +280,7 @@ $dramas = $conn->query("SELECT * FROM drama");
                             <label for="darama_id">Select Dramas:</label>
                             <select id="darama_id" name="darama_id" class="form-control" required>
                                 <option value="">Please select a drama</option>
+                                <option value="-1">All Dramas</option>
                                 <?php while ($drama = $dramas->fetch_assoc()) { ?>
                                     <option value="<?php echo $drama['id']; ?>"><?php echo $drama['name']; ?></option>
                                 <?php } ?>
@@ -293,7 +297,7 @@ $dramas = $conn->query("SELECT * FROM drama");
                         <div class="form-group">
                             <label for="video_id">Select Episodes:</label>
                             <!-- "Select All" Checkbox -->
-                            <div>
+                            <div id="selectAllEpisodesWrapper">
                                 <input type="checkbox" id="selectAllEpisodes"> <label for="selectAllEpisodes">Select All</label>
                             </div>
 
@@ -303,6 +307,9 @@ $dramas = $conn->query("SELECT * FROM drama");
 
                             <small class="form-text text-muted">
                                 Hold down the Ctrl (Windows) or Command (Mac) key to select multiple options.
+                            </small>
+                            <small id="bulkAssignHint" class="form-text text-muted" style="display: none;">
+                                Bulk mode will add every episode from the selected scope when you click the button.
                             </small>
                         </div>
                         <button type="submit" name="assign_video_to_group" class="btn btn-custom-red">Assign Videos to Group</button>
@@ -347,11 +354,49 @@ $dramas = $conn->query("SELECT * FROM drama");
 
             <script>
                 $(document).ready(function() {
+                    function resetEpisodeSelection(message, disableSelection) {
+                        $('#video_id').html('<option value="">' + message + '</option>');
+                        $('#video_id').prop('disabled', disableSelection);
+                        $('#video_id').prop('required', !disableSelection);
+                        $('#selectAllEpisodes').prop('checked', false);
+                        $('#selectAllEpisodesWrapper').toggle(!disableSelection);
+                        $('#bulkAssignHint').toggle(disableSelection);
+                    }
+
+                    function applyBulkState() {
+                        var dramaId = $('#darama_id').val();
+                        var seasonId = $('#season_id').val();
+                        var isAllDramas = dramaId === '-1';
+                        var isAllSeasons = seasonId === '-1';
+
+                        $('#assign_all_dramas').val(isAllDramas ? '1' : '0');
+                        $('#assign_all_seasons').val(!isAllDramas && isAllSeasons ? '1' : '0');
+
+                        if (isAllDramas) {
+                            $('#season_id').html('<option value="-1">All Seasons</option>');
+                            resetEpisodeSelection('All dramas, seasons, and episodes will be assigned on submit.', true);
+                            return true;
+                        }
+
+                        if (isAllSeasons) {
+                            resetEpisodeSelection('All seasons and episodes for this drama will be assigned on submit.', true);
+                            return true;
+                        }
+
+                        $('#video_id').prop('disabled', false);
+                        $('#video_id').prop('required', true);
+                        $('#selectAllEpisodesWrapper').show();
+                        $('#bulkAssignHint').hide();
+                        return false;
+                    }
+
                     // Fetch seasons based on selected drama
                     $('#darama_id').change(function() {
                         var dramaId = $(this).val();
 
-                        if (dramaId) {
+                        if (dramaId === '-1') {
+                            applyBulkState();
+                        } else if (dramaId) {
                             $.ajax({
                                 url: 'getseasoningroup.php',
                                 type: 'POST',
@@ -360,7 +405,8 @@ $dramas = $conn->query("SELECT * FROM drama");
                                 },
                                 success: function(response) {
                                     $('#season_id').html(response);
-                                    $('#video_id').html('<option value="">Please select a season first</option>'); // Reset episodes
+                                    resetEpisodeSelection('Please select a season first', false);
+                                    applyBulkState();
                                 },
                                 error: function() {
                                     alert('Failed to fetch seasons. Please try again.');
@@ -368,13 +414,18 @@ $dramas = $conn->query("SELECT * FROM drama");
                             });
                         } else {
                             $('#season_id').html('<option value="">Please select a drama first</option>');
-                            $('#video_id').html('<option value="">Please select a season first</option>');
+                            resetEpisodeSelection('Please select a season first', false);
+                            applyBulkState();
                         }
                     });
 
                     // Fetch episodes based on selected season
                     $('#season_id').change(function() {
                         var seasonId = $(this).val();
+
+                        if (applyBulkState()) {
+                            return;
+                        }
 
                         if (seasonId) {
                             $.ajax({
@@ -385,15 +436,19 @@ $dramas = $conn->query("SELECT * FROM drama");
                                 },
                                 success: function(response) {
                                     $('#video_id').html(response);
+                                    $('#video_id').prop('disabled', false);
+                                    $('#video_id').prop('required', true);
                                 },
                                 error: function() {
                                     alert('Failed to fetch episodes. Please try again.');
                                 }
                             });
                         } else {
-                            $('#video_id').html('<option value="">Please select a season first</option>');
+                            resetEpisodeSelection('Please select a season first', false);
                         }
                     });
+
+                    applyBulkState();
                 });
                 // "Select All" Checkbox Functionality
                 $(document).ready(function() {
