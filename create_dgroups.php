@@ -161,6 +161,44 @@ $dramas = $conn->query("SELECT * FROM drama");
     <!--google material icon-->
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="vendors/styles/mycss/Darams.css">
+    <style>
+        .assign-mode-tabs .nav-link {
+            border: 1px solid #d8deea;
+            border-radius: 999px;
+            color: #334155;
+            background: #f8fafc;
+            font-weight: 600;
+            padding: 10px 18px;
+            margin-right: 10px;
+        }
+
+        .assign-mode-tabs .nav-link.active {
+            background: #2f66c7;
+            border-color: #2f66c7;
+            color: #fff;
+            box-shadow: 0 10px 25px rgba(47, 102, 199, 0.18);
+        }
+
+        .assign-mode-panel {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background: #fbfdff;
+            padding: 24px;
+        }
+
+        .assign-mode-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .assign-mode-copy {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+    </style>
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-119386393-1"></script>
@@ -264,80 +302,139 @@ $dramas = $conn->query("SELECT * FROM drama");
                 </div>
 
                 <div class="card-body">
-                    <form method="post" action="add_video.php">
-                        <input type="hidden" name="return_to" value="create_dgroups.php">
-                        <input type="hidden" id="assign_all_dramas" name="assign_all_dramas" value="0">
-                        <input type="hidden" id="assign_all_seasons" name="assign_all_seasons" value="0">
-                        <div class="form-group">
-                            <label for="group_id">Select Group:</label>
-                            <select id="group_id" name="group_id" class="form-control" required>
-                                <?php while ($group = $groups2->fetch_assoc()) { ?>
-                                    <option value="<?php echo $group['id']; ?>"><?php echo $group['group_name']; ?></option>
-                                <?php } ?>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="darama_id">Select Dramas:</label>
-                            <select id="darama_id" name="darama_id" class="form-control" required>
-                                <option value="">Please select a drama</option>
-                                <option value="-1">All Dramas</option>
-                                <?php while ($drama = $dramas->fetch_assoc()) { ?>
-                                    <option value="<?php echo $drama['id']; ?>"><?php echo $drama['name']; ?></option>
-                                <?php } ?>
-                            </select>
-                            <small class="form-text text-muted">
-                                Select one drama here if you want to choose seasons and episodes manually.
-                            </small>
-                        </div>
-                        <div class="form-group">
-                            <label for="bulk_drama_ids">Or Select Multiple Dramas:</label>
-                            <select id="bulk_drama_ids" name="bulk_drama_ids[]" class="form-control select2" multiple>
-                                <?php
-                                $dramas_multi = $conn->query("SELECT * FROM drama");
-                                if ($dramas_multi) {
-                                    while ($drama_multi = $dramas_multi->fetch_assoc()) {
-                                ?>
-                                        <option value="<?php echo $drama_multi['id']; ?>"><?php echo $drama_multi['name']; ?></option>
-                                <?php
-                                    }
-                                    $dramas_multi->free();
-                                }
-                                ?>
-                            </select>
-                            <small class="form-text text-muted">
-                                If you select multiple dramas here, all seasons and all episodes of those dramas will be assigned automatically.
-                            </small>
-                        </div>
-                        <div class="form-group">
-                            <label for="season_id">Select Season:</label>
-                            <select id="season_id" name="season_id" class="form-control" required>
-                                <option value="">Please select a drama first</option>
-                                <!-- Season options will be populated via AJAX -->
-                            </select>
-                        </div>
-                        <input type="hidden" id="season_number" name="season_number" value="">
-                        <div class="form-group">
-                            <label for="video_id">Select Episodes:</label>
-                            <!-- "Select All" Checkbox -->
-                            <div id="selectAllEpisodesWrapper">
-                                <input type="checkbox" id="selectAllEpisodes"> <label for="selectAllEpisodes">Select All</label>
+                    <ul class="nav nav-pills assign-mode-tabs mb-4" id="assignModeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="manual-assign-tab" data-toggle="pill" href="#manual-assign-pane" role="tab" aria-controls="manual-assign-pane" aria-selected="true">Single Manual</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="bulk-assign-tab" data-toggle="pill" href="#bulk-assign-pane" role="tab" aria-controls="bulk-assign-pane" aria-selected="false">Multiple Dramas</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="assignModeTabsContent">
+                        <div class="tab-pane fade show active" id="manual-assign-pane" role="tabpanel" aria-labelledby="manual-assign-tab">
+                            <div class="assign-mode-panel">
+                                <div class="assign-mode-title">Manual drama, season, and episode selection</div>
+                                <p class="assign-mode-copy">Use this tab when you want full control over one drama. You can choose a single drama, pick one season or all seasons, then assign selected episodes.</p>
+
+                                <form method="post" action="add_video.php" id="manualAssignForm">
+                                    <input type="hidden" name="return_to" value="create_dgroups.php">
+                                    <input type="hidden" id="manual_assign_all_dramas" name="assign_all_dramas" value="0">
+                                    <input type="hidden" id="manual_assign_all_seasons" name="assign_all_seasons" value="0">
+
+                                    <div class="form-group">
+                                        <label for="manual_group_id">Select Group:</label>
+                                        <select id="manual_group_id" name="group_id" class="form-control" required>
+                                            <?php while ($group = $groups2->fetch_assoc()) { ?>
+                                                <option value="<?php echo $group['id']; ?>"><?php echo $group['group_name']; ?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="manual_darama_id">Select Drama:</label>
+                                        <select id="manual_darama_id" name="darama_id" class="form-control" required>
+                                            <option value="">Please select a drama</option>
+                                            <?php while ($drama = $dramas->fetch_assoc()) { ?>
+                                                <option value="<?php echo $drama['id']; ?>"><?php echo $drama['name']; ?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="manual_season_id">Select Season:</label>
+                                        <select id="manual_season_id" name="season_id" class="form-control" required>
+                                            <option value="">Please select a drama first</option>
+                                        </select>
+                                    </div>
+
+                                    <input type="hidden" id="manual_season_number" name="season_number" value="">
+
+                                    <div class="form-group">
+                                        <label for="manual_video_id">Select Episodes:</label>
+                                        <div id="selectAllManualEpisodesWrapper">
+                                            <input type="checkbox" id="selectAllManualEpisodes"> <label for="selectAllManualEpisodes">Select All</label>
+                                        </div>
+
+                                        <select id="manual_video_id" name="video_id[]" class="form-control" multiple required>
+                                            <option value="">Please select a season first</option>
+                                        </select>
+
+                                        <small class="form-text text-muted">
+                                            Hold down the Ctrl (Windows) or Command (Mac) key to select multiple options.
+                                        </small>
+                                        <small id="manualAssignHint" class="form-text text-muted" style="display: none;">
+                                            All episodes from the selected scope will be assigned automatically when you submit.
+                                        </small>
+                                    </div>
+
+                                    <button type="submit" name="assign_video_to_group" class="btn btn-custom-red">Assign Videos to Group</button>
+                                </form>
                             </div>
-
-                            <select id="video_id" name="video_id[]" class="form-control" multiple required>
-                                <option value="">Please select a season first</option>
-                            </select>
-
-                            <small class="form-text text-muted">
-                                Hold down the Ctrl (Windows) or Command (Mac) key to select multiple options.
-                            </small>
-                            <small id="bulkAssignHint" class="form-text text-muted" style="display: none;">
-                                Bulk mode will add every episode from the selected scope when you click the button.
-                            </small>
                         </div>
-                        <button type="submit" name="assign_video_to_group" class="btn btn-custom-red">Assign Videos to Group</button>
-                    </form>
 
+                        <div class="tab-pane fade" id="bulk-assign-pane" role="tabpanel" aria-labelledby="bulk-assign-tab">
+                            <div class="assign-mode-panel">
+                                <div class="assign-mode-title">Fast bulk assignment for many dramas</div>
+                                <p class="assign-mode-copy">Use this tab when you want to assign many dramas at once. The system will automatically add all seasons and all episodes of the selected dramas to the chosen group.</p>
 
+                                <form method="post" action="add_video.php" id="bulkAssignForm">
+                                    <input type="hidden" name="return_to" value="create_dgroups.php">
+                                    <input type="hidden" id="bulk_assign_all_dramas" name="assign_all_dramas" value="0">
+                                    <input type="hidden" name="assign_all_seasons" value="0">
+
+                                    <div class="form-group">
+                                        <label for="bulk_group_id">Select Group:</label>
+                                        <select id="bulk_group_id" name="group_id" class="form-control" required>
+                                            <?php
+                                            $groups_bulk = $conn->query("SELECT * FROM `groups`");
+                                            if ($groups_bulk) {
+                                                while ($group_bulk = $groups_bulk->fetch_assoc()) {
+                                            ?>
+                                                    <option value="<?php echo $group_bulk['id']; ?>"><?php echo $group_bulk['group_name']; ?></option>
+                                            <?php
+                                                }
+                                                $groups_bulk->free();
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="bulk_assign_all_toggle">
+                                            <label class="custom-control-label" for="bulk_assign_all_toggle">Assign every drama in one click</label>
+                                        </div>
+                                        <small id="bulkAssignAllHelp" class="form-text text-muted" style="display: none;">
+                                            This will assign every drama, every season, and every episode to the selected group.
+                                        </small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="bulk_drama_ids">Select Multiple Dramas:</label>
+                                        <select id="bulk_drama_ids" name="bulk_drama_ids[]" class="form-control select2" multiple required>
+                                            <?php
+                                            $dramas_multi = $conn->query("SELECT * FROM drama");
+                                            if ($dramas_multi) {
+                                                while ($drama_multi = $dramas_multi->fetch_assoc()) {
+                                            ?>
+                                                    <option value="<?php echo $drama_multi['id']; ?>"><?php echo $drama_multi['name']; ?></option>
+                                            <?php
+                                                }
+                                                $dramas_multi->free();
+                                            }
+                                            ?>
+                                        </select>
+                                        <small id="bulkAssignSelectionHelp" class="form-text text-muted">
+                                            Select one or more dramas here. All seasons and all episodes of those dramas will be assigned automatically.
+                                        </small>
+                                    </div>
+
+                                    <button type="submit" name="assign_video_to_group" class="btn btn-custom-red">Assign Selected Dramas</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -372,6 +469,12 @@ $dramas = $conn->query("SELECT * FROM drama");
                         allowClear: true
                     });
 
+                    $('#manual_darama_id').select2({
+                        placeholder: 'Select one drama',
+                        allowClear: true,
+                        width: '100%'
+                    });
+
                     $('#bulk_drama_ids').select2({
                         placeholder: 'Select multiple dramas',
                         allowClear: true,
@@ -382,80 +485,37 @@ $dramas = $conn->query("SELECT * FROM drama");
 
             <script>
                 $(document).ready(function() {
-                    function resetEpisodeSelection(message, disableSelection) {
-                        $('#video_id').html('<option value="">' + message + '</option>');
-                        $('#video_id').prop('disabled', disableSelection);
-                        $('#video_id').prop('required', !disableSelection);
-                        $('#selectAllEpisodes').prop('checked', false);
-                        $('#selectAllEpisodesWrapper').toggle(!disableSelection);
-                        $('#bulkAssignHint').toggle(disableSelection);
+                    function resetManualEpisodes(message, disableSelection) {
+                        $('#manual_video_id').html('<option value="">' + message + '</option>');
+                        $('#manual_video_id').prop('disabled', disableSelection);
+                        $('#manual_video_id').prop('required', !disableSelection);
+                        $('#selectAllManualEpisodes').prop('checked', false);
+                        $('#selectAllManualEpisodesWrapper').toggle(!disableSelection);
+                        $('#manualAssignHint').toggle(disableSelection);
                     }
 
-                    function getBulkDramaSelection() {
-                        return $('#bulk_drama_ids').val() || [];
-                    }
-
-                    function applyBulkState() {
-                        var bulkDramaIds = getBulkDramaSelection();
-                        var dramaId = $('#darama_id').val();
-                        var seasonId = $('#season_id').val();
-                        var hasMultiDramaSelection = bulkDramaIds.length > 0;
-                        var isAllDramas = dramaId === '-1';
+                    function applyManualState() {
+                        var seasonId = $('#manual_season_id').val();
                         var isAllSeasons = seasonId === '-1';
 
-                        $('#assign_all_dramas').val(isAllDramas ? '1' : '0');
-                        $('#assign_all_seasons').val(!isAllDramas && isAllSeasons ? '1' : '0');
-
-                        if (hasMultiDramaSelection) {
-                            $('#darama_id').prop('required', false).prop('disabled', true);
-                            $('#season_id').prop('disabled', true).prop('required', false);
-                            resetEpisodeSelection('All seasons and episodes of the selected dramas will be assigned on submit.', true);
-                            return true;
-                        }
-
-                        $('#darama_id').prop('disabled', false).prop('required', true);
-                        $('#season_id').prop('disabled', false).prop('required', true);
-
-                        if (isAllDramas) {
-                            $('#season_id').html('<option value="-1">All Seasons</option>');
-                            resetEpisodeSelection('All dramas, seasons, and episodes will be assigned on submit.', true);
-                            return true;
-                        }
+                        $('#manual_assign_all_seasons').val(isAllSeasons ? '1' : '0');
 
                         if (isAllSeasons) {
-                            resetEpisodeSelection('All seasons and episodes for this drama will be assigned on submit.', true);
+                            resetManualEpisodes('All episodes from every season of this drama will be assigned on submit.', true);
                             return true;
                         }
 
-                        $('#video_id').prop('disabled', false);
-                        $('#video_id').prop('required', true);
-                        $('#selectAllEpisodesWrapper').show();
-                        $('#bulkAssignHint').hide();
+                        $('#manual_video_id').prop('disabled', false);
+                        $('#manual_video_id').prop('required', true);
+                        $('#selectAllManualEpisodesWrapper').show();
+                        $('#manualAssignHint').hide();
                         return false;
                     }
 
-                    $('#bulk_drama_ids').change(function() {
-                        if (getBulkDramaSelection().length > 0) {
-                            $('#darama_id').val('');
-                            $('#season_id').html('<option value="">Multiple dramas selected</option>');
-                        } else {
-                            $('#season_id').html('<option value="">Please select a drama first</option>');
-                            resetEpisodeSelection('Please select a season first', false);
-                        }
-                        applyBulkState();
-                    });
-
-                    // Fetch seasons based on selected drama
-                    $('#darama_id').change(function() {
+                    $('#manual_darama_id').change(function() {
                         var dramaId = $(this).val();
 
-                        if (getBulkDramaSelection().length > 0) {
-                            return;
-                        }
-
-                        if (dramaId === '-1') {
-                            applyBulkState();
-                        } else if (dramaId) {
+                        if (dramaId) {
                             $.ajax({
                                 url: 'getseasoningroup.php',
                                 type: 'POST',
@@ -463,26 +523,25 @@ $dramas = $conn->query("SELECT * FROM drama");
                                     darama_id: dramaId
                                 },
                                 success: function(response) {
-                                    $('#season_id').html(response);
-                                    resetEpisodeSelection('Please select a season first', false);
-                                    applyBulkState();
+                                    $('#manual_season_id').html(response);
+                                    resetManualEpisodes('Please select a season first', false);
+                                    applyManualState();
                                 },
                                 error: function() {
                                     alert('Failed to fetch seasons. Please try again.');
                                 }
                             });
                         } else {
-                            $('#season_id').html('<option value="">Please select a drama first</option>');
-                            resetEpisodeSelection('Please select a season first', false);
-                            applyBulkState();
+                            $('#manual_season_id').html('<option value="">Please select a drama first</option>');
+                            resetManualEpisodes('Please select a season first', false);
+                            applyManualState();
                         }
                     });
 
-                    // Fetch episodes based on selected season
-                    $('#season_id').change(function() {
+                    $('#manual_season_id').change(function() {
                         var seasonId = $(this).val();
 
-                        if (applyBulkState()) {
+                        if (applyManualState()) {
                             return;
                         }
 
@@ -494,41 +553,46 @@ $dramas = $conn->query("SELECT * FROM drama");
                                     season_id: seasonId
                                 },
                                 success: function(response) {
-                                    $('#video_id').html(response);
-                                    $('#video_id').prop('disabled', false);
-                                    $('#video_id').prop('required', true);
+                                    $('#manual_video_id').html(response);
+                                    $('#manual_video_id').prop('disabled', false);
+                                    $('#manual_video_id').prop('required', true);
                                 },
                                 error: function() {
                                     alert('Failed to fetch episodes. Please try again.');
                                 }
                             });
                         } else {
-                            resetEpisodeSelection('Please select a season first', false);
+                            resetManualEpisodes('Please select a season first', false);
                         }
                     });
 
-                    applyBulkState();
-                });
-                // "Select All" Checkbox Functionality
-                $(document).ready(function() {
-
-                    $("#selectAllEpisodes").change(function() {
+                    $('#selectAllManualEpisodes').change(function() {
                         var isChecked = $(this).prop("checked");
 
-                        $("#video_id option").each(function() {
+                        $("#manual_video_id option").each(function() {
                             $(this).prop("selected", isChecked);
                         });
 
-                        $("#video_id").trigger("change");
+                        $("#manual_video_id").trigger("change");
                     });
+
+                    $('#bulk_assign_all_toggle').change(function() {
+                        var assignAll = $(this).is(':checked');
+                        $('#bulk_assign_all_dramas').val(assignAll ? '1' : '0');
+                        $('#bulk_drama_ids').prop('disabled', assignAll).prop('required', !assignAll);
+
+                        if (assignAll) {
+                            $('#bulk_drama_ids').val(null).trigger('change');
+                            $('#bulkAssignAllHelp').show();
+                            $('#bulkAssignSelectionHelp').hide();
+                        } else {
+                            $('#bulkAssignAllHelp').hide();
+                            $('#bulkAssignSelectionHelp').show();
+                        }
+                    });
+
+                    applyManualState();
                 });
-            </script>
-            <script>
-                function updateSeasonNumber(selectElement) {
-                    const selectedOption = selectElement.options[selectElement.selectedIndex];
-                    const seasonNumber = selectedOption.getAttribute('data-season-number');
-                    document.getElementById('season_number').value = seasonNumber || '';
-                }
             </script>
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
