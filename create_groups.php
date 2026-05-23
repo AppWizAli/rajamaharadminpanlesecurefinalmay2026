@@ -273,7 +273,7 @@ $dramas = $conn->query("SELECT * FROM drama");
     </div>
     <div class="form-group">
         <label for="bulk_drama_ids">Or Select Multiple Dramas:</label>
-        <select id="bulk_drama_ids" name="bulk_drama_ids[]" class="form-control" multiple size="8">
+        <select id="bulk_drama_ids" name="bulk_drama_ids[]" class="form-control select2" multiple>
             <?php
             $dramas_multi = $conn->query("SELECT * FROM drama");
             if ($dramas_multi) {
@@ -352,6 +352,12 @@ $dramas = $conn->query("SELECT * FROM drama");
         $('#user_id').select2({
             placeholder: 'Select a user',
             allowClear: true
+        });
+
+        $('#bulk_drama_ids').select2({
+            placeholder: 'Select multiple dramas',
+            allowClear: true,
+            width: '100%'
         });
     });
 </script>
