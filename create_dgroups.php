@@ -285,6 +285,28 @@ $dramas = $conn->query("SELECT * FROM drama");
                                     <option value="<?php echo $drama['id']; ?>"><?php echo $drama['name']; ?></option>
                                 <?php } ?>
                             </select>
+                            <small class="form-text text-muted">
+                                Select one drama here if you want to choose seasons and episodes manually.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="bulk_drama_ids">Or Select Multiple Dramas:</label>
+                            <select id="bulk_drama_ids" name="bulk_drama_ids[]" class="form-control" multiple size="8">
+                                <?php
+                                $dramas_multi = $conn->query("SELECT * FROM drama");
+                                if ($dramas_multi) {
+                                    while ($drama_multi = $dramas_multi->fetch_assoc()) {
+                                ?>
+                                        <option value="<?php echo $drama_multi['id']; ?>"><?php echo $drama_multi['name']; ?></option>
+                                <?php
+                                    }
+                                    $dramas_multi->free();
+                                }
+                                ?>
+                            </select>
+                            <small class="form-text text-muted">
+                                If you select multiple dramas here, all seasons and all episodes of those dramas will be assigned automatically.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label for="season_id">Select Season:</label>
@@ -363,14 +385,30 @@ $dramas = $conn->query("SELECT * FROM drama");
                         $('#bulkAssignHint').toggle(disableSelection);
                     }
 
+                    function getBulkDramaSelection() {
+                        return $('#bulk_drama_ids').val() || [];
+                    }
+
                     function applyBulkState() {
+                        var bulkDramaIds = getBulkDramaSelection();
                         var dramaId = $('#darama_id').val();
                         var seasonId = $('#season_id').val();
+                        var hasMultiDramaSelection = bulkDramaIds.length > 0;
                         var isAllDramas = dramaId === '-1';
                         var isAllSeasons = seasonId === '-1';
 
                         $('#assign_all_dramas').val(isAllDramas ? '1' : '0');
                         $('#assign_all_seasons').val(!isAllDramas && isAllSeasons ? '1' : '0');
+
+                        if (hasMultiDramaSelection) {
+                            $('#darama_id').prop('required', false).prop('disabled', true);
+                            $('#season_id').prop('disabled', true).prop('required', false);
+                            resetEpisodeSelection('All seasons and episodes of the selected dramas will be assigned on submit.', true);
+                            return true;
+                        }
+
+                        $('#darama_id').prop('disabled', false).prop('required', true);
+                        $('#season_id').prop('disabled', false).prop('required', true);
 
                         if (isAllDramas) {
                             $('#season_id').html('<option value="-1">All Seasons</option>');
@@ -390,9 +428,24 @@ $dramas = $conn->query("SELECT * FROM drama");
                         return false;
                     }
 
+                    $('#bulk_drama_ids').change(function() {
+                        if (getBulkDramaSelection().length > 0) {
+                            $('#darama_id').val('');
+                            $('#season_id').html('<option value="">Multiple dramas selected</option>');
+                        } else {
+                            $('#season_id').html('<option value="">Please select a drama first</option>');
+                            resetEpisodeSelection('Please select a season first', false);
+                        }
+                        applyBulkState();
+                    });
+
                     // Fetch seasons based on selected drama
                     $('#darama_id').change(function() {
                         var dramaId = $(this).val();
+
+                        if (getBulkDramaSelection().length > 0) {
+                            return;
+                        }
 
                         if (dramaId === '-1') {
                             applyBulkState();

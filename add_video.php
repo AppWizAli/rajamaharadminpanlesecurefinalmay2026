@@ -26,6 +26,10 @@ if (isset($_POST['assign_video_to_group'])) {
     $assign_all_dramas = isset($_POST['assign_all_dramas']) && $_POST['assign_all_dramas'] === '1';
     $assign_all_seasons = isset($_POST['assign_all_seasons']) && $_POST['assign_all_seasons'] === '1';
     $video_ids = isset($_POST['video_id']) && is_array($_POST['video_id']) ? $_POST['video_id'] : [];
+    $bulk_drama_ids = isset($_POST['bulk_drama_ids']) && is_array($_POST['bulk_drama_ids']) ? $_POST['bulk_drama_ids'] : [];
+    $bulk_drama_ids = array_values(array_unique(array_filter(array_map('intval', $bulk_drama_ids), function ($dramaId) {
+        return $dramaId > 0;
+    })));
 
     if ($group_id <= 0) {
         echo "Group ID is missing or invalid.";
@@ -35,7 +39,19 @@ if (isset($_POST['assign_video_to_group'])) {
     $videos_to_assign = [];
     $stmt = null;
 
-    if ($assign_all_dramas) {
+    if (!empty($bulk_drama_ids)) {
+        $placeholders = implode(',', array_fill(0, count($bulk_drama_ids), '?'));
+        $types = str_repeat('i', count($bulk_drama_ids));
+        $sql = "SELECT e.id AS video_id, s.drama_id, s.id AS season_id
+                FROM episode e
+                INNER JOIN season s ON e.season_id = s.id
+                WHERE s.drama_id IN ($placeholders)
+                ORDER BY s.drama_id ASC, s.season_number ASC, e.episode_number ASC";
+        $stmt = $conn->prepare($sql);
+        if ($stmt !== false) {
+            $stmt->bind_param($types, ...$bulk_drama_ids);
+        }
+    } elseif ($assign_all_dramas) {
         $sql = "SELECT e.id AS video_id, s.drama_id, s.id AS season_id
                 FROM episode e
                 INNER JOIN season s ON e.season_id = s.id
