@@ -42,6 +42,8 @@ $filters = [
     'user_id' => isset($_GET['user_id']) ? intval($_GET['user_id']) : 0,
     'device_id' => trim($_GET['device_id'] ?? ''),
     'event' => trim($_GET['event'] ?? ''),
+    'app_version' => trim($_GET['app_version'] ?? ''),
+    'app_version_code' => trim($_GET['app_version_code'] ?? ''),
     'severity' => trim($_GET['severity'] ?? ''),
     'status' => trim($_GET['status'] ?? ''),
     'date_from' => trim($_GET['date_from'] ?? ''),
@@ -72,6 +74,16 @@ if ($filters['event'] !== '') {
     $where[] = "si.incident_type LIKE ?";
     $params[] = "%" . $filters['event'] . "%";
     $types .= "s";
+}
+if ($filters['app_version'] !== '') {
+    $where[] = "si.app_version LIKE ?";
+    $params[] = "%" . $filters['app_version'] . "%";
+    $types .= "s";
+}
+if ($filters['app_version_code'] !== '' && is_numeric($filters['app_version_code'])) {
+    $where[] = "si.app_version_code = ?";
+    $params[] = intval($filters['app_version_code']);
+    $types .= "i";
 }
 if (in_array($filters['severity'], ['info', 'warning', 'critical'], true)) {
     $where[] = "si.severity = ?";
@@ -214,6 +226,8 @@ $returnUrl = current_request_url();
                     <input class="form-control" type="number" name="user_id" placeholder="User ID" value="<?php echo $filters['user_id'] > 0 ? intval($filters['user_id']) : ''; ?>">
                     <input class="form-control" name="device_id" placeholder="Device ID" value="<?php echo h($filters['device_id']); ?>">
                     <input class="form-control" name="event" placeholder="Event type" value="<?php echo h($filters['event']); ?>">
+                    <input class="form-control" name="app_version" placeholder="App version" value="<?php echo h($filters['app_version']); ?>">
+                    <input class="form-control" type="number" name="app_version_code" placeholder="App version code" value="<?php echo h($filters['app_version_code']); ?>">
                     <select class="form-control" name="severity">
                         <option value="">All risk levels</option>
                         <option value="critical" <?php echo $filters['severity'] === 'critical' ? 'selected' : ''; ?>>Critical</option>
